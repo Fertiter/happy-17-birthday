@@ -1,0 +1,722 @@
+/* =========================================================
+   ПАСТЕЛЬНАЯ ПАЛИТРА И ПЕРЕМЕННЫЕ
+   ========================================================= */
+:root {
+  --bg-cream: #fff8f3;
+  --bg-pink: #fde2e8;
+  --bg-peach: #ffe5d4;
+  --bg-lavender: #ede2fb;
+
+  --text-main: #4e3545;
+  --text-muted: #7c5c6e;
+  --accent-berry: #a8426c;
+  --accent-rose: #eb729d;
+  --accent-lavender: #9c79d6;
+
+  --glass-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.8), rgba(255, 245, 249, 0.64));
+  --glass-border: rgba(255, 255, 255, 0.88);
+  --glass-shadow: 0 24px 64px rgba(176, 108, 141, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+
+  --font-display: 'Caveat', cursive;
+  --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', 'Courier New', monospace;
+}
+
+/* =========================================================
+   БАЗОВЫЕ СТИЛИ И ФОН
+   ========================================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: var(--font-body);
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(253, 210, 224, 0.85), transparent 45%),
+    radial-gradient(circle at 88% 14%, rgba(232, 216, 252, 0.88), transparent 44%),
+    radial-gradient(circle at 80% 86%, rgba(255, 222, 202, 0.85), transparent 48%),
+    radial-gradient(circle at 18% 85%, rgba(252, 224, 236, 0.78), transparent 46%),
+    var(--bg-cream);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Мягкие плавающие пастельные блики */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(56px);
+  opacity: 0.55;
+  animation: floatBlob 18s ease-in-out infinite alternate;
+}
+
+.blob-pink {
+  width: clamp(220px, 42vw, 460px);
+  height: clamp(220px, 42vw, 460px);
+  background: #fbcfe0;
+  top: -8%;
+  left: -8%;
+}
+
+.blob-lavender {
+  width: clamp(240px, 44vw, 500px);
+  height: clamp(240px, 44vw, 500px);
+  background: #dfd0fb;
+  top: 28%;
+  right: -12%;
+  animation-delay: -6s;
+}
+
+.blob-peach {
+  width: clamp(210px, 38vw, 420px);
+  height: clamp(210px, 38vw, 420px);
+  background: #ffd9c4;
+  bottom: -10%;
+  left: 22%;
+  animation-delay: -11s;
+}
+
+@keyframes floatBlob {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(20px, -18px, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-16px, 22px, 0) scale(0.96);
+  }
+}
+
+/* Canvas-слои для фоновых лепестков и переднего салюта/кликов */
+.canvas-layer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.canvas-petals {
+  z-index: 1;
+}
+
+.canvas-burst {
+  z-index: 40;
+}
+
+/* =========================================================
+   КОНТЕЙНЕР ЭКРАНОВ И GLASSMORPHISM
+   ========================================================= */
+.viewport {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 2.25rem) clamp(0.85rem, 3.5vw, 1.5rem);
+}
+
+.screen {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.screen.is-hidden {
+  opacity: 0;
+  transform: scale(0.96) translateY(10px);
+  pointer-events: none;
+}
+
+.screen[hidden] {
+  display: none;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 28px;
+}
+
+/* =========================================================
+   ЭКРАН 1: ИНТЕРАКТИВНЫЙ КОНВЕРТ
+   ========================================================= */
+.envelope-card {
+  width: min(100%, 460px);
+  padding: clamp(1.6rem, 5vw, 2.6rem) clamp(1.15rem, 4.5vw, 2.2rem);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  animation: fadeUpIn 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.symbol-ribbon {
+  margin: 0;
+  font-size: clamp(0.88rem, 2.8vw, 1rem);
+  letter-spacing: 0.08em;
+  color: var(--accent-berry);
+  opacity: 0.85;
+  user-select: none;
+}
+
+.envelope {
+  position: relative;
+  width: min(296px, 76vw);
+  aspect-ratio: 31 / 20;
+  margin: 0.5rem 0 0.2rem;
+  cursor: pointer;
+  perspective: 1000px;
+  user-select: none;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.envelope:hover,
+.envelope:focus-visible {
+  transform: translateY(-4px) scale(1.015);
+  outline: none;
+}
+
+.envelope:focus-visible .envelope-back {
+  box-shadow: 0 0 0 3px rgba(235, 114, 157, 0.45), 0 22px 48px rgba(181, 101, 134, 0.24);
+}
+
+.envelope-back {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f8d4e0, #efb9cc);
+  box-shadow: 0 18px 40px rgba(176, 101, 136, 0.22);
+}
+
+.envelope-letter {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 10%;
+  bottom: 10%;
+  z-index: 2;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffefb, #fff1f6);
+  border: 1px solid rgba(244, 198, 215, 0.8);
+  box-shadow: 0 4px 14px rgba(162, 92, 123, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 10%;
+  gap: 0.2rem;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.14s;
+}
+
+.letter-badge {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  font-weight: 700;
+  color: var(--accent-berry);
+  line-height: 1;
+}
+
+.letter-flora {
+  font-size: clamp(0.8rem, 2.8vw, 0.95rem);
+  color: var(--accent-rose);
+  letter-spacing: 0.2em;
+}
+
+.envelope-pocket {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 16px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.envelope-pocket-left,
+.envelope-pocket-right,
+.envelope-pocket-bottom {
+  position: absolute;
+  inset: 0;
+}
+
+.envelope-pocket-left {
+  background: linear-gradient(135deg, #fde8ef, #f8d5e1);
+  clip-path: polygon(0 0, 52% 52%, 0 100%);
+}
+
+.envelope-pocket-right {
+  background: linear-gradient(225deg, #fce4ec, #f6cfdc);
+  clip-path: polygon(100% 0, 48% 52%, 100% 100%);
+}
+
+.envelope-pocket-bottom {
+  background: linear-gradient(180deg, #fff6f9, #fce5ee);
+  clip-path: polygon(0 100%, 50% 45%, 100% 100%);
+  filter: drop-shadow(0 -2px 4px rgba(168, 92, 122, 0.12));
+}
+
+.envelope-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  z-index: 4;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transition:
+    transform 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+    z-index 0s linear 0.18s;
+  pointer-events: none;
+}
+
+.envelope-flap-shape {
+  width: 100%;
+  height: 100%;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  background: linear-gradient(180deg, #ffedf3, #f6c8d8);
+  clip-path: polygon(0 0, 100% 0, 50% 96%);
+  filter: drop-shadow(0 4px 8px rgba(168, 92, 122, 0.14));
+}
+
+.envelope-seal {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  width: clamp(44px, 12vw, 52px);
+  height: clamp(44px, 12vw, 52px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #ff9ec0, #dd5b89);
+  border: 2px solid rgba(255, 245, 249, 0.85);
+  box-shadow: 0 6px 16px rgba(188, 72, 114, 0.32);
+  color: #fff9fb;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  animation: sealPulse 2.4s ease-in-out infinite;
+  transition: opacity 0.25s ease, transform 0.28s ease;
+  pointer-events: none;
+}
+
+@keyframes sealPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.07);
+  }
+}
+
+/* Состояние открытия конверта */
+.envelope.is-opening .envelope-seal {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.35);
+}
+
+.envelope.is-opening .envelope-flap {
+  transform: rotateX(-180deg);
+  z-index: 1;
+}
+
+.envelope.is-opening .envelope-letter {
+  transform: translateY(-48%);
+}
+
+.envelope-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.02rem, 3.6vw, 1.18rem);
+  font-weight: 700;
+  color: var(--accent-berry);
+  line-height: 1.4;
+}
+
+.tap-hint {
+  margin: -0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.82;
+  user-select: none;
+}
+
+/* =========================================================
+   КНОПКИ
+   ========================================================= */
+.primary-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  padding: 0.88rem 1.75rem;
+  min-height: 50px;
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 3.1vw, 1.04rem);
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #f38bb0 0%, #e4719c 52%, #b98be8 100%);
+  background-size: 170% 170%;
+  background-position: 0% 50%;
+  box-shadow:
+    0 12px 26px rgba(219, 108, 152, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.22s ease,
+    background-position 0.4s ease;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+  background-position: 100% 50%;
+  box-shadow:
+    0 16px 32px rgba(219, 108, 152, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.primary-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.primary-btn:focus-visible {
+  outline: 3px solid rgba(235, 114, 157, 0.45);
+  outline-offset: 3px;
+}
+
+.hug-btn {
+  width: min(100%, 420px);
+  padding: 0.95rem 1.4rem;
+  line-height: 1.35;
+}
+
+/* =========================================================
+   ЭКРАН 2: ОСНОВНАЯ ОТКРЫТКА
+   ========================================================= */
+.card-screen {
+  padding-block: clamp(0.4rem, 2vw, 1.25rem);
+}
+
+.birthday-card {
+  width: min(100%, 660px);
+  padding: clamp(1.4rem, 4.5vw, 2.65rem) clamp(1.1rem, 4.5vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.2rem, 3.2vw, 1.75rem);
+}
+
+.card-header {
+  text-align: center;
+}
+
+.age-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.36rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(242, 186, 209, 0.65);
+  color: var(--accent-berry);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.65rem;
+}
+
+.card-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.45rem, 8.8vw, 3.85rem);
+  font-weight: 700;
+  line-height: 1.06;
+  background: linear-gradient(125deg, #9d3b65 0%, #d45d89 52%, #8e59a9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(235, 114, 157, 0.14));
+}
+
+.symbol-divider {
+  margin: 0.55rem 0 0;
+  font-size: clamp(0.85rem, 2.6vw, 0.98rem);
+  color: var(--accent-rose);
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+
+/* =========================================================
+   БЛОК С ASCII-БУКЕТОМ
+   ========================================================= */
+.bouquet-box {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 244, 248, 0.56));
+  border: 1.5px dashed rgba(226, 151, 181, 0.55);
+  border-radius: 22px;
+  padding: clamp(0.95rem, 3vw, 1.35rem) clamp(0.6rem, 2.5vw, 1.25rem);
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.bouquet-garland {
+  margin: 0 0 0.65rem;
+  font-size: clamp(0.88rem, 2.8vw, 1.05rem);
+  color: var(--accent-rose);
+  letter-spacing: 0.14em;
+  user-select: none;
+}
+
+.bouquet-pre-wrap {
+  width: 100%;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.ascii-bouquet {
+  margin: 0;
+  display: inline-block;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: clamp(0.66rem, 2.7vw, 0.92rem);
+  line-height: 1.28;
+  white-space: pre;
+  color: var(--text-main);
+  user-select: none;
+}
+
+.blossom-rose {
+  color: #df5888;
+}
+
+.blossom-pink {
+  color: #eb7aa4;
+}
+
+.blossom-lavender {
+  color: #9b72cf;
+}
+
+.blossom-peach {
+  color: #e48869;
+}
+
+.blossom-gold {
+  color: #dfa046;
+  font-weight: 500;
+}
+
+.stem {
+  color: #6ca177;
+}
+
+.wrap {
+  color: #b58294;
+}
+
+.ribbon {
+  color: #d85689;
+  font-weight: 500;
+}
+
+.bouquet-caption {
+  margin: 0.7rem 0 0;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* =========================================================
+   ТЕКСТ ПОЗДРАВЛЕНИЯ
+   ========================================================= */
+.message-body {
+  max-width: 56ch;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  font-size: clamp(0.97rem, 2.6vw, 1.07rem);
+  line-height: 1.72;
+  color: var(--text-main);
+}
+
+.message-body p {
+  margin: 0;
+}
+
+.signature {
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 5.2vw, 1.95rem);
+  font-weight: 700;
+  color: var(--accent-berry);
+  text-align: right;
+  line-height: 1.2;
+}
+
+/* =========================================================
+   ИНТЕРАКТИВНАЯ КНОПКА И ОКНО КОМПЛИМЕНТОВ
+   ========================================================= */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+.compliment-box {
+  width: min(100%, 480px);
+  padding: 1rem 1.2rem;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(253, 236, 244, 0.78));
+  border: 1px solid rgba(235, 169, 198, 0.65);
+  box-shadow: 0 12px 28px rgba(185, 114, 149, 0.14);
+  text-align: center;
+}
+
+.compliment-box[hidden] {
+  display: none;
+}
+
+.compliment-box.is-popping {
+  animation: popCompliment 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes popCompliment {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.compliment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-berry);
+}
+
+.compliment-badge {
+  opacity: 0.85;
+}
+
+.hug-counter {
+  padding: 0.18rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(253, 226, 236, 0.9);
+  border: 1px solid rgba(235, 169, 198, 0.55);
+}
+
+.compliment-text {
+  margin: 0;
+  font-size: clamp(0.98rem, 2.9vw, 1.08rem);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+/* =========================================================
+   ПОЭТАПНОЕ ПОЯВЛЕНИЕ ЭЛЕМЕНТОВ ОТКРЫТКИ
+   ========================================================= */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.card-screen.is-visible .reveal-item {
+  animation: fadeUpIn 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.card-screen.is-visible .reveal-item:nth-child(1) {
+  animation-delay: 0.06s;
+}
+
+.card-screen.is-visible .reveal-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.card-screen.is-visible .reveal-item:nth-child(3) {
+  animation-delay: 0.34s;
+}
+
+.card-screen.is-visible .reveal-item:nth-child(4) {
+  animation-delay: 0.48s;
+}
+
+@keyframes fadeUpIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   АДАПТАЦИЯ ПОД ОЧЕНЬ УЗКИЕ ЭКРАНЫ И ДОСТУПНОСТЬ
+   ========================================================= */
+@media (max-width: 380px) {
+  .birthday-card {
+    border-radius: 22px;
+  }
+
+  .ascii-bouquet {
+    font-size: 0.63rem;
+  }
+
+  .signature {
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
