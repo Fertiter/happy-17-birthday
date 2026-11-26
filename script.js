@@ -61,43 +61,75 @@
   let bouquetRafId = null;
 
   /* =========================================================
-     1. 3D ЖИВОЙ SHADED ASCII-БУКЕТ ЛИЛИЙ И РОЗ (#bouquet-canvas)
+     1. ВЫСОКОДЕТАЛИЗИРОВАННЫЙ 3D ASCII-БУКЕТ (#bouquet-canvas)
+     Адаптивная сетка под экран телефона (до 118x80 символов)
      ========================================================= */
-  const B_COLS = 68;
-  const B_ROWS = 42;
-  const ASCII_RAMP = '.,:;-=+*#%@';
-  const SHADE_LEVELS = 7;
+  let bCols = 104;
+  let bRows = 71;
+  const ASCII_RAMP = '.,:;-=+*#%@$';
+  const SHADE_LEVELS = 9;
 
-  // 8 цветовых семейств для объёмных цветков, стеблей, листвы и тычинок
+  // 9 ботанических семейств с глубокими тенями и перламутровыми краями
   const COLOR_FAMILIES = [
-    { h: 342, s: 88, lMin: 34, lMax: 84 }, // 0: карминно-розовая лилия
-    { h: 326, s: 90, lMin: 36, lMax: 86 }, // 1: нежная сакура
-    { h: 344, s: 58, lMin: 50, lMax: 94 }, // 2: кремово-жемчужная лилия
-    { h: 16, s: 92, lMin: 38, lMax: 86 },  // 3: персиково-коралловая
-    { h: 43, s: 94, lMin: 36, lMax: 86 },  // 4: золотистое шампанское
-    { h: 274, s: 84, lMin: 38, lMax: 86 }, // 5: орхидейно-лавандовая
-    { h: 134, s: 66, lMin: 26, lMax: 74 }, // 6: изумрудные стебли и листья
-    { h: 47, s: 98, lMin: 46, lMax: 92 }   // 7: золотая пыльца и перелив банта
+    { h: 344, s: 90, lMin: 18, lMax: 82 }, // 0: карминно-розовая лилия
+    { h: 326, s: 90, lMin: 22, lMax: 85 }, // 1: нежная сакура
+    { h: 342, s: 46, lMin: 34, lMax: 94 }, // 2: кремово-жемчужная лилия и края
+    { h: 18, s: 92, lMin: 22, lMax: 84 },  // 3: персиково-коралловая
+    { h: 45, s: 94, lMin: 22, lMax: 86 },  // 4: золотистое шампанское
+    { h: 274, s: 84, lMin: 24, lMax: 85 }, // 5: орхидейно-лавандовая
+    { h: 132, s: 68, lMin: 16, lMax: 74 }, // 6: изумрудные стебли и листва
+    { h: 48, s: 98, lMin: 40, lMax: 92 },  // 7: золотая пыльца и блик банта
+    { h: 332, s: 78, lMin: 14, lMax: 58 }  // 8: тёмный бархатный крап и глубина чаши
   ];
 
-  // Предварительный атлас всех ASCII-символов x 56 оттенков
   let glyphAtlas = null;
-  let atlasCellW = 10;
-  let atlasCellH = 16;
-  let bouquetPixelW = 490;
-  let bouquetPixelH = 490;
+  let atlasCellW = 8;
+  let atlasCellH = 12;
+  let bouquetPixelW = 720;
+  let bouquetPixelH = 792;
+  let zBuf = null;
+  let charBuf = null;
+  let colorBuf = null;
+  let bouquetStars = [];
+
+  function buildBouquetStars() {
+    bouquetStars = Array.from({ length: 48 }, (_, idx) => ({
+      col: Math.floor(((idx * 37 + 11) % 100) * 0.01 * bCols),
+      row: Math.floor(((idx * 53 + 19) % 100) * 0.01 * bRows),
+      phase: idx * 0.72,
+      fam: idx % 6,
+      chIdx: idx % 3 === 0 ? 7 : idx % 3 === 1 ? 6 : 0 // *, +, .
+    }));
+  }
 
   function buildBouquetAtlas() {
-    const cssWidth = Math.max(240, bouquetCanvas.clientWidth || 440);
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cssWidth = Math.max(250, bouquetCanvas.clientWidth || 460);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
 
     bouquetPixelW = Math.round(cssWidth * dpr);
-    bouquetPixelH = bouquetPixelW;
+    bouquetPixelH = Math.round(bouquetPixelW * 1.1);
     bouquetCanvas.width = bouquetPixelW;
     bouquetCanvas.height = bouquetPixelH;
 
-    atlasCellW = Math.max(5, Math.floor(bouquetPixelW / B_COLS));
-    atlasCellH = Math.max(8, Math.floor(bouquetPixelH / B_ROWS));
+    // Подбираем плотность сетки под физическое разрешение экрана
+    if (bouquetPixelW >= 780) {
+      bCols = 118;
+      bRows = 80;
+    } else if (bouquetPixelW >= 580) {
+      bCols = 104;
+      bRows = 71;
+    } else {
+      bCols = 80;
+      bRows = 54;
+    }
+
+    zBuf = new Float32Array(bCols * bRows);
+    charBuf = new Int16Array(bCols * bRows);
+    colorBuf = new Uint8Array(bCols * bRows);
+    buildBouquetStars();
+
+    atlasCellW = Math.max(4, Math.floor(bouquetPixelW / bCols));
+    atlasCellH = Math.max(7, Math.floor(bouquetPixelH / bRows));
 
     const numChars = ASCII_RAMP.length;
     const totalColors = COLOR_FAMILIES.length * SHADE_LEVELS;
@@ -107,7 +139,7 @@
     glyphAtlas.height = totalColors * atlasCellH;
 
     const actx = glyphAtlas.getContext('2d');
-    const fontSize = Math.max(7, Math.round(atlasCellH * 0.94));
+    const fontSize = Math.max(6, Math.round(atlasCellH * 0.94));
     actx.font = `700 ${fontSize}px "JetBrains Mono", ui-monospace, "Courier New", monospace`;
     actx.textAlign = 'center';
     actx.textBaseline = 'middle';
@@ -117,7 +149,7 @@
       for (let shadeIdx = 0; shadeIdx < SHADE_LEVELS; shadeIdx += 1) {
         const t = shadeIdx / (SHADE_LEVELS - 1);
         const light = fam.lMin + (fam.lMax - fam.lMin) * t;
-        const sat = fam.s - t * 8;
+        const sat = fam.s - t * 10;
         const colorIdx = famIdx * SHADE_LEVELS + shadeIdx;
         actx.fillStyle = `hsl(${fam.h}, ${sat.toFixed(0)}%, ${light.toFixed(0)}%)`;
 
@@ -130,67 +162,60 @@
     }
   }
 
-  // Генератор 3D облака точек букета (цветы + тычинки + стебли + листья + лента)
+  /* =========================================================
+     БОТАНИЧЕСКИЙ 3D-ГЕНЕРАТОР: ЛИЛИИ, КРАП, ЖИЛКИ, БУТОНЫ, ЛИСТВА
+     ========================================================= */
   const ptsTmp = [];
 
   function rotateVec3(x, y, z, rx, ry, rz) {
-    // 1) Roll around Z
     const cz = Math.cos(rz);
     const sz = Math.sin(rz);
     const x1 = x * cz - y * sz;
     const y1 = x * sz + y * cz;
     const z1 = z;
 
-    // 2) Tilt around X
     const cx = Math.cos(rx);
     const sx = Math.sin(rx);
-    const x2 = x1;
     const y2 = y1 * cx - z1 * sx;
     const z2 = y1 * sx + z1 * cx;
 
-    // 3) Tilt around Y
     const cy = Math.cos(ry);
     const sy = Math.sin(ry);
-    return [
-      x2 * cy + z2 * sy,
-      y2,
-      -x2 * sy + z2 * cy
-    ];
+    return [x1 * cy + z2 * sy, y2, -x1 * sy + z2 * cy];
   }
 
   function localPetalPoint(u, v, radius, petalAngle, isInner) {
-    const halfW = radius * 0.26 * Math.sin(Math.pow(u, 0.68) * Math.PI);
-    const r = (0.07 + 0.93 * u) * radius;
+    const widthFactor = isInner ? 0.24 : 0.275;
+    const halfW = radius * widthFactor * Math.sin(Math.pow(u, 0.68) * Math.PI);
+    const r = (0.06 + 0.94 * u) * radius;
     const across = v * halfW;
 
     const cupZ =
-      radius * (0.47 * Math.pow(u, 0.72) - 0.33 * Math.pow(u, 2.25)) +
-      (isInner ? 0.035 * radius : 0);
-    const ridgeZ = radius * (0.068 * (1 - Math.abs(v)) - 0.036 * v * v);
-    const ruffleZ = radius * 0.02 * Math.sin(u * 10) * v * v;
-    const lz = cupZ + ridgeZ + ruffleZ;
+      radius * (0.49 * Math.pow(u, 0.72) - 0.37 * Math.pow(u, 2.3)) +
+      (isInner ? 0.036 * radius : 0);
+    // Центральная жилка + мягкая волнистость краёв лепестка
+    const midrib = radius * (0.072 * (1 - Math.abs(v)) - 0.038 * v * v);
+    const edgeRuffle =
+      radius * 0.028 * Math.sin(u * 14 + petalAngle * 2) * Math.pow(Math.abs(v), 1.6);
+    const lz = cupZ + midrib + edgeRuffle;
 
     const ca = Math.cos(petalAngle);
     const sa = Math.sin(petalAngle);
-    return [
-      r * ca - across * sa,
-      r * sa + across * ca,
-      lz
-    ];
+    return [r * ca - across * sa, r * sa + across * ca, lz];
   }
 
   function addLily3D(cfg) {
     const { cx, cy, cz, radius, rx, ry, rz, family, edgeFamily, phase } = cfg;
-    const uSteps = 20;
-    const vSteps = 11;
-    const eps = 0.015;
+    const uSteps = 22;
+    const vSteps = 13;
+    const eps = 0.014;
 
     for (let p = 0; p < 6; p += 1) {
       const petalAngle = (p * Math.PI) / 3;
       const isInner = p % 2 === 0;
 
       for (let iu = 0; iu < uSteps; iu += 1) {
-        const u = 0.06 + (0.94 * iu) / (uSteps - 1);
+        const u = 0.05 + (0.95 * iu) / (uSteps - 1);
         for (let iv = 0; iv < vSteps; iv += 1) {
           const v = -1 + (2 * iv) / (vSteps - 1);
 
@@ -198,7 +223,6 @@
           const pu = localPetalPoint(Math.min(1, u + eps), v, radius, petalAngle, isInner);
           const pv = localPetalPoint(u, Math.min(1, v + eps), radius, petalAngle, isInner);
 
-          // Вычисляем 3D-нормаль через векторное произведение касательных
           const tux = pu[0] - p0[0];
           const tuy = pu[1] - p0[1];
           const tuz = pu[2] - p0[2];
@@ -222,12 +246,30 @@
           const wp = rotateVec3(p0[0], p0[1], p0[2], rx, ry, rz);
           const wn = rotateVec3(lnx, lny, lnz, rx, ry, rz);
 
-          // Градиент оттенка от горловины к кончикам лепестков и центральной жилке
-          let shadeBias = -0.18 + 0.34 * u;
-          if (Math.abs(v) < 0.22) shadeBias += 0.14;
-          if (u > 0.78 || Math.abs(v) > 0.78) shadeBias += 0.14;
+          // Жилка, глубина горловины, бархатный крап и светлая кайма лепестков
+          let shadeBias = -0.22 + 0.34 * u;
+          let chosenFam = family;
 
-          const chosenFam = u > 0.62 && edgeFamily !== undefined ? edgeFamily : family;
+          if (Math.abs(v) < 0.16) {
+            shadeBias += 0.2;
+          }
+          if (u < 0.22) {
+            chosenFam = 8;
+            shadeBias -= 0.18;
+          } else if (u < 0.68 && Math.abs(v) < 0.62) {
+            const spot = Math.sin(u * 52 + v * 37 + p * 7.3) * Math.cos(u * 31 - v * 43);
+            if (spot > 0.68) {
+              chosenFam = 8;
+              shadeBias -= 0.16;
+            }
+          }
+
+          if (u > 0.84 || Math.abs(v) > 0.8) {
+            shadeBias += 0.22;
+            if (edgeFamily !== undefined) {
+              chosenFam = edgeFamily;
+            }
+          }
 
           ptsTmp.push({
             x: cx + wp[0],
@@ -244,25 +286,97 @@
       }
     }
 
-    // Золотистые тычинки в центре лилии
+    // Центральный пестик
+    for (let k = 1; k <= 8; k += 1) {
+      const t = k / 8;
+      const wp = rotateVec3(0.02 * radius * t, -0.04 * radius * t * t, radius * 0.42 * t, rx, ry, rz);
+      ptsTmp.push({
+        x: cx + wp[0],
+        y: cy + wp[1],
+        z: cz + wp[2],
+        nx: 0,
+        ny: -0.2,
+        nz: 0.98,
+        fam: k >= 7 ? 2 : 6,
+        bias: k >= 7 ? 0.38 : 0.12,
+        phase
+      });
+    }
+
+    // 6 изогнутых тычинок с объёмными пыльниками
     for (let s = 0; s < 6; s += 1) {
       const ang = ((s + 0.5) * Math.PI) / 3;
       const ca = Math.cos(ang);
       const sa = Math.sin(ang);
-      for (let step = 1; step <= 6; step += 1) {
-        const t = step / 6;
-        const sr = radius * 0.38 * t;
-        const sz = radius * (0.12 + 0.24 * Math.sin(t * Math.PI * 0.7));
+      for (let step = 1; step <= 9; step += 1) {
+        const t = step / 9;
+        const sr = radius * 0.39 * t;
+        const sz = radius * (0.1 + 0.27 * Math.sin(t * Math.PI * 0.72));
         const wp = rotateVec3(sr * ca, sr * sa, sz, rx, ry, rz);
+        const isAnther = step >= 8;
         ptsTmp.push({
           x: cx + wp[0],
           y: cy + wp[1],
           z: cz + wp[2],
-          nx: 0,
-          ny: -0.3,
-          nz: 0.95,
-          fam: step >= 5 ? 7 : 4,
-          bias: step >= 5 ? 0.42 : 0.16,
+          nx: ca * 0.25,
+          ny: sa * 0.25,
+          nz: 0.94,
+          fam: isAnther ? 7 : 4,
+          bias: isAnther ? 0.44 : 0.14,
+          phase
+        });
+      }
+    }
+  }
+
+  function addBud3D(cx, cy, cz, len, rx, ry, rz, fam, phase) {
+    // Заострённый нераскрывшийся бутон лилии
+    const uSteps = 15;
+    const aroundSteps = 10;
+    for (let iu = 0; iu < uSteps; iu += 1) {
+      const u = iu / (uSteps - 1);
+      const r = len * 0.16 * Math.sin(Math.pow(u, 0.78) * Math.PI);
+      const zLocal = len * u;
+      for (let ia = 0; ia < aroundSteps; ia += 1) {
+        const ang = (ia / aroundSteps) * Math.PI * 2;
+        const px = Math.cos(ang) * r;
+        const py = Math.sin(ang) * r;
+        const wp = rotateVec3(px, py, zLocal, rx, ry, rz);
+        const wn = rotateVec3(Math.cos(ang), Math.sin(ang), 0.35, rx, ry, rz);
+        ptsTmp.push({
+          x: cx + wp[0],
+          y: cy + wp[1],
+          z: cz + wp[2],
+          nx: wn[0],
+          ny: wn[1],
+          nz: wn[2],
+          fam: u < 0.3 ? 6 : fam,
+          bias: -0.1 + 0.38 * u,
+          phase
+        });
+      }
+    }
+  }
+
+  function addBabysBreath3D(cx, cy, cz, phase) {
+    // Веточка воздушной жемчужной гипсофилы
+    for (let b = 0; b < 5; b += 1) {
+      const ang = (b * Math.PI * 2) / 5 + phase;
+      const dist = 0.06 + (b % 2) * 0.04;
+      const bx = cx + Math.cos(ang) * dist;
+      const by = cy + Math.sin(ang) * dist * 0.8;
+      const bz = cz + Math.sin(b * 1.7) * 0.04;
+      for (let k = 0; k < 5; k += 1) {
+        const ka = (k * Math.PI * 2) / 5;
+        ptsTmp.push({
+          x: bx + Math.cos(ka) * 0.018,
+          y: by + Math.sin(ka) * 0.018,
+          z: bz + 0.01,
+          nx: Math.cos(ka) * 0.3,
+          ny: Math.sin(ka) * 0.3,
+          nz: 0.9,
+          fam: k === 0 ? 7 : 2,
+          bias: 0.38,
           phase
         });
       }
@@ -270,7 +384,7 @@
   }
 
   function addStem3D(x0, y0, z0, x1, y1, z1, x2, y2, z2) {
-    const steps = 34;
+    const steps = 40;
     for (let i = 0; i <= steps; i += 1) {
       const t = i / steps;
       const it = 1 - t;
@@ -280,14 +394,14 @@
 
       for (let off = -1; off <= 1; off += 0.5) {
         ptsTmp.push({
-          x: bx + off * 0.018,
+          x: bx + off * 0.017,
           y: by,
           z: bz + (off === 0 ? 0.018 : 0),
-          nx: off * 0.52,
+          nx: off * 0.55,
           ny: -0.1,
-          nz: 0.85,
+          nz: 0.82,
           fam: 6,
-          bias: Math.abs(off) < 0.3 ? 0.16 : -0.08,
+          bias: Math.abs(off) < 0.3 ? 0.18 : -0.12,
           phase: 0.2
         });
       }
@@ -295,13 +409,13 @@
   }
 
   function addLeaf3D(ox, oy, oz, dirX, dirY, len, width, curveZ) {
-    const uSteps = 16;
-    const vSteps = 5;
+    const uSteps = 22;
+    const vSteps = 7;
     for (let iu = 0; iu < uSteps; iu += 1) {
       const u = iu / (uSteps - 1);
-      const w = width * Math.sin(u * Math.PI);
+      const w = width * Math.sin(Math.pow(u, 0.78) * Math.PI);
       const lx = ox + dirX * len * u;
-      const ly = oy + dirY * len * u + 0.12 * u * u;
+      const ly = oy + dirY * len * u + 0.14 * u * u;
       const lz = oz + curveZ * Math.sin(u * Math.PI * 0.85);
 
       for (let iv = 0; iv < vSteps; iv += 1) {
@@ -309,12 +423,12 @@
         ptsTmp.push({
           x: lx - dirY * v * w,
           y: ly + dirX * v * w * 0.5,
-          z: lz + (1 - Math.abs(v)) * 0.03,
-          nx: -dirY * 0.25,
-          ny: -0.35,
-          nz: 0.9,
+          z: lz + (1 - Math.abs(v)) * 0.035,
+          nx: -dirY * 0.28,
+          ny: -0.36,
+          nz: 0.88,
           fam: 6,
-          bias: 0.12 * (1 - Math.abs(v)) + 0.12 * u,
+          bias: -0.05 + 0.18 * (1 - Math.abs(v)) + 0.14 * u,
           phase: 0.5
         });
       }
@@ -322,12 +436,11 @@
   }
 
   function addRibbonTie3D() {
-    // Аккуратное золотисто-розовое переплетение ленты у основания стеблей
     const yBase = 0.88;
-    for (let a = -1.35; a <= 1.35; a += 0.12) {
-      const rx = Math.sin(a) * 0.15;
-      const rz = Math.cos(a) * 0.15 + 0.06;
-      for (let dy = -0.035; dy <= 0.035; dy += 0.024) {
+    for (let a = -1.35; a <= 1.35; a += 0.09) {
+      const rx = Math.sin(a) * 0.16;
+      const rz = Math.cos(a) * 0.16 + 0.06;
+      for (let dy = -0.04; dy <= 0.04; dy += 0.02) {
         ptsTmp.push({
           x: rx,
           y: yBase + dy,
@@ -341,13 +454,13 @@
         });
       }
     }
-    // Два лепестка банта
-    for (let side of [-1, 1]) {
-      for (let t = 0; t <= 1; t += 0.1) {
+
+    [ -1, 1 ].forEach((side) => {
+      for (let t = 0; t <= 1; t += 0.07) {
         const ang = t * Math.PI * 2;
-        const bx = side * (0.06 + Math.abs(Math.sin(ang * 0.5)) * 0.14);
-        const by = yBase + Math.sin(ang) * 0.055;
-        const bz = 0.2 + Math.cos(ang) * 0.03;
+        const bx = side * (0.06 + Math.abs(Math.sin(ang * 0.5)) * 0.15);
+        const by = yBase + Math.sin(ang) * 0.06;
+        const bz = 0.21 + Math.cos(ang) * 0.03;
         ptsTmp.push({
           x: bx,
           y: by,
@@ -356,33 +469,30 @@
           ny: -0.2,
           nz: 0.95,
           fam: 7,
-          bias: 0.26,
+          bias: 0.28,
           phase: 1.4
         });
       }
-    }
+    });
   }
 
-  // Плоские типизированные массивы для молниеносного рендера без создания объектов
   let ptCount = 0;
   let ptX, ptY, ptZ, ptNX, ptNY, ptNZ, ptFam, ptBias, ptPhase;
-  let zBuf, charBuf, colorBuf;
 
   function initBouquetGeometry() {
     ptsTmp.length = 0;
 
+    // 9 пышных лилий разного наклона и глубины
     const flowers = [
-      // Верхний главный ряд
-      { cx: -0.02, cy: -0.74, cz: 0.12, radius: 0.41, rx: -0.34, ry: 0.04, rz: 0.1, family: 0, edgeFamily: 1, phase: 0.0 },
-      { cx: -0.56, cy: -0.56, cz: -0.10, radius: 0.37, rx: -0.24, ry: -0.44, rz: -0.3, family: 2, edgeFamily: 1, phase: 0.7 },
-      { cx: 0.55, cy: -0.57, cz: -0.08, radius: 0.37, rx: -0.24, ry: 0.42, rz: 0.25, family: 4, edgeFamily: 3, phase: 1.3 },
-      // Средний пышный ряд
-      { cx: -0.71, cy: -0.04, cz: 0.18, radius: 0.40, rx: 0.04, ry: -0.48, rz: -0.4, family: 1, edgeFamily: 2, phase: 1.9 },
-      { cx: 0.14, cy: -0.15, cz: 0.38, radius: 0.43, rx: -0.06, ry: 0.12, rz: 0.18, family: 2, edgeFamily: 0, phase: 2.4 },
-      { cx: 0.72, cy: -0.02, cz: 0.14, radius: 0.38, rx: 0.05, ry: 0.48, rz: 0.35, family: 5, edgeFamily: 1, phase: 3.0 },
-      // Нижний передний ряд
-      { cx: -0.36, cy: 0.35, cz: 0.30, radius: 0.38, rx: 0.22, ry: -0.26, rz: -0.2, family: 3, edgeFamily: 4, phase: 3.6 },
-      { cx: 0.40, cy: 0.34, cz: 0.26, radius: 0.37, rx: 0.20, ry: 0.28, rz: 0.22, family: 0, edgeFamily: 5, phase: 4.2 }
+      { cx: 0.02, cy: -0.76, cz: 0.10, radius: 0.39, rx: -0.34, ry: 0.04, rz: 0.1, family: 0, edgeFamily: 1, phase: 0.0 },
+      { cx: -0.54, cy: -0.58, cz: -0.08, radius: 0.36, rx: -0.24, ry: -0.44, rz: -0.3, family: 2, edgeFamily: 1, phase: 0.6 },
+      { cx: 0.56, cy: -0.58, cz: -0.06, radius: 0.36, rx: -0.24, ry: 0.42, rz: 0.25, family: 4, edgeFamily: 2, phase: 1.2 },
+      { cx: -0.73, cy: -0.09, cz: 0.16, radius: 0.38, rx: 0.04, ry: -0.48, rz: -0.4, family: 1, edgeFamily: 2, phase: 1.8 },
+      { cx: -0.21, cy: -0.25, cz: 0.33, radius: 0.37, rx: -0.10, ry: -0.18, rz: -0.12, family: 3, edgeFamily: 2, phase: 2.3 },
+      { cx: 0.23, cy: -0.13, cz: 0.43, radius: 0.42, rx: -0.05, ry: 0.14, rz: 0.18, family: 2, edgeFamily: 0, phase: 2.8 },
+      { cx: 0.74, cy: -0.05, cz: 0.14, radius: 0.37, rx: 0.05, ry: 0.48, rz: 0.35, family: 5, edgeFamily: 2, phase: 3.4 },
+      { cx: -0.43, cy: 0.32, cz: 0.28, radius: 0.36, rx: 0.22, ry: -0.26, rz: -0.2, family: 4, edgeFamily: 3, phase: 4.0 },
+      { cx: 0.44, cy: 0.30, cz: 0.26, radius: 0.36, rx: 0.20, ry: 0.28, rz: 0.22, family: 0, edgeFamily: 2, phase: 4.6 }
     ];
 
     flowers.forEach((fl) => {
@@ -391,7 +501,7 @@
         fl.cx * 0.92,
         fl.cy + 0.06,
         fl.cz - 0.12,
-        fl.cx * 0.35,
+        fl.cx * 0.34,
         0.58,
         0.04,
         -fl.cx * 0.18,
@@ -400,13 +510,28 @@
       );
     });
 
-    // Пышная зелёная листва вокруг основания букета
-    addLeaf3D(-0.18, 0.56, 0.08, -0.78, -0.25, 0.72, 0.11, 0.16);
-    addLeaf3D(0.18, 0.56, 0.08, 0.78, -0.24, 0.72, 0.11, 0.16);
-    addLeaf3D(-0.24, 0.68, 0.12, -0.68, 0.08, 0.62, 0.10, 0.18);
-    addLeaf3D(0.24, 0.68, 0.12, 0.68, 0.08, 0.62, 0.10, 0.18);
-    addLeaf3D(-0.08, 0.72, 0.20, -0.45, 0.28, 0.46, 0.08, 0.22);
-    addLeaf3D(0.08, 0.72, 0.20, 0.45, 0.28, 0.46, 0.08, 0.22);
+    // 3 заострённых нераскрывшихся бутона сверху и по бокам
+    addBud3D(-0.28, -0.82, -0.04, 0.28, -1.25, -0.35, 0.2, 1, 0.9);
+    addBud3D(0.32, -0.80, -0.04, 0.28, -1.25, 0.38, -0.2, 3, 2.1);
+    addBud3D(0.84, -0.34, 0.02, 0.25, -0.75, 0.85, 0.1, 5, 3.3);
+
+    // Воздушные веточки жемчужной гипсофилы между цветами
+    addBabysBreath3D(-0.38, -0.44, 0.22, 0.4);
+    addBabysBreath3D(0.42, -0.42, 0.22, 1.5);
+    addBabysBreath3D(-0.62, 0.18, 0.24, 2.6);
+    addBabysBreath3D(0.62, 0.16, 0.22, 3.7);
+    addBabysBreath3D(0.0, 0.18, 0.36, 4.4);
+    addBabysBreath3D(0.02, -0.46, 0.28, 5.1);
+
+    // Детальная изумрудная листва
+    addLeaf3D(-0.18, 0.54, 0.08, -0.80, -0.28, 0.76, 0.12, 0.16);
+    addLeaf3D(0.18, 0.54, 0.08, 0.80, -0.26, 0.76, 0.12, 0.16);
+    addLeaf3D(-0.24, 0.66, 0.12, -0.70, 0.06, 0.64, 0.11, 0.18);
+    addLeaf3D(0.24, 0.66, 0.12, 0.70, 0.06, 0.64, 0.11, 0.18);
+    addLeaf3D(-0.08, 0.70, 0.20, -0.46, 0.26, 0.48, 0.09, 0.22);
+    addLeaf3D(0.08, 0.70, 0.20, 0.46, 0.26, 0.48, 0.09, 0.22);
+    addLeaf3D(-0.36, 0.16, -0.10, -0.68, -0.52, 0.56, 0.09, 0.05);
+    addLeaf3D(0.36, 0.16, -0.10, 0.68, -0.52, 0.56, 0.09, 0.05);
 
     addRibbonTie3D();
 
@@ -434,22 +559,8 @@
       ptPhase[i] = p.phase;
     }
     ptsTmp.length = 0;
-
-    zBuf = new Float32Array(B_COLS * B_ROWS);
-    charBuf = new Int16Array(B_COLS * B_ROWS);
-    colorBuf = new Uint8Array(B_COLS * B_ROWS);
   }
 
-  // Мерцающие звёздочки на фоне 3D-букета
-  const bouquetStars = Array.from({ length: 34 }, (_, idx) => ({
-    col: Math.floor(((idx * 37) % 100) * 0.01 * B_COLS),
-    row: Math.floor(((idx * 53 + 17) % 100) * 0.01 * B_ROWS),
-    phase: idx * 0.85,
-    fam: idx % 6,
-    chIdx: idx % 3 === 0 ? 7 : idx % 3 === 1 ? 6 : 0 // *, +, .
-  }));
-
-  // Интерактивное вращение 3D-букета пальцем или мышью
   let targetUserYaw = 0;
   let targetUserPitch = 0;
   let userYaw = 0;
@@ -467,7 +578,7 @@
   let lastBarUpdate = 0;
 
   function renderBouquetFrame(nowMs) {
-    if (!hasOpenedCard || document.hidden || !glyphAtlas) {
+    if (!hasOpenedCard || document.hidden || !glyphAtlas || !zBuf) {
       bouquetRafId = null;
       return;
     }
@@ -478,16 +589,14 @@
     }
 
     const bloomElapsed = Math.min(1, (timeSec - bloomStartTime) / 1.05);
-    const bloomEase = prefersReducedMotion
-      ? 1
-      : 1 - Math.pow(1 - bloomElapsed, 3);
+    const bloomEase = prefersReducedMotion ? 1 : 1 - Math.pow(1 - bloomElapsed, 3);
     const bloomScale = 0.28 + 0.72 * bloomEase;
 
     userYaw += (targetUserYaw - userYaw) * 0.09;
     userPitch += (targetUserPitch - userPitch) * 0.09;
 
-    const autoYaw = prefersReducedMotion ? 0 : Math.sin(timeSec * 0.72) * 0.24;
-    const autoPitch = prefersReducedMotion ? 0 : Math.cos(timeSec * 0.52) * 0.07;
+    const autoYaw = prefersReducedMotion ? 0 : Math.sin(timeSec * 0.7) * 0.22;
+    const autoPitch = prefersReducedMotion ? 0 : Math.cos(timeSec * 0.5) * 0.065;
 
     const yaw = autoYaw + userYaw;
     const pitch = autoPitch + userPitch;
@@ -497,7 +606,6 @@
     const cx = Math.cos(pitch);
     const sx = Math.sin(pitch);
 
-    // Орбитальный источник света для живого переливания лепестков
     let lx = prefersReducedMotion ? 0.35 : Math.cos(timeSec * 1.15) * 0.58;
     let ly = prefersReducedMotion ? -0.45 : -0.45 + Math.sin(timeSec * 0.85) * 0.2;
     let lz = 0.86;
@@ -506,7 +614,6 @@
     ly /= lLen;
     lz /= lLen;
 
-    // Волна сияния при клике на букет
     const shimmerAge = timeSec - shimmerWaveStart;
     const shimmerActive = shimmerAge >= 0 && shimmerAge < 1.3;
     const shimmerY = 1.2 - shimmerAge * 2.0;
@@ -514,25 +621,23 @@
     zBuf.fill(-999);
     charBuf.fill(-1);
 
-    const scaleX = B_COLS * 0.415 * bloomScale;
-    const scaleY = B_ROWS * 0.405 * bloomScale;
-    const centerCol = B_COLS * 0.5;
-    const centerRow = B_ROWS * 0.50;
+    const scaleX = bCols * 0.41 * bloomScale;
+    const scaleY = bRows * 0.39 * bloomScale;
+    const centerCol = bCols * 0.5;
+    const centerRow = bRows * 0.51;
     const maxCharIdx = ASCII_RAMP.length - 1;
 
     for (let i = 0; i < ptCount; i += 1) {
       const sway = prefersReducedMotion
         ? 0
-        : Math.sin(timeSec * 1.4 + ptPhase[i]) * 0.018 * (1 - Math.max(0, ptY[i]));
+        : Math.sin(timeSec * 1.35 + ptPhase[i]) * 0.015 * (1 - Math.max(0, ptY[i]));
 
       const px0 = ptX[i] + sway;
       const py0 = ptY[i];
       const pz0 = ptZ[i];
 
-      // Поворот вокруг Y (yaw)
       const rx1 = px0 * cy + pz0 * sy;
       const rz1 = -px0 * sy + pz0 * cy;
-      // Поворот вокруг X (pitch)
       const ry2 = py0 * cx - rz1 * sx;
       const rz2 = py0 * sx + rz1 * cx;
 
@@ -540,25 +645,23 @@
       const gx = Math.round(centerCol + rx1 * scaleX * persp);
       const gy = Math.round(centerRow + ry2 * scaleY * persp);
 
-      if (gx < 0 || gx >= B_COLS || gy < 0 || gy >= B_ROWS) continue;
+      if (gx < 0 || gx >= bCols || gy < 0 || gy >= bRows) continue;
 
-      const cellIdx = gy * B_COLS + gx;
+      const cellIdx = gy * bCols + gx;
       if (rz2 <= zBuf[cellIdx]) continue;
       zBuf[cellIdx] = rz2;
 
-      // Поворот нормали
       const nrx = ptNX[i] * cy + ptNZ[i] * sy;
       const nrz1 = -ptNX[i] * sy + ptNZ[i] * cy;
       const nry = ptNY[i] * cx - nrz1 * sx;
       const nrz = ptNY[i] * sx + nrz1 * cx;
 
       let dot = nrx * lx + nry * ly + nrz * lz;
-      if (dot < 0) dot = -dot * 0.35;
+      if (dot < 0) dot = -dot * 0.32;
 
-      // Переливающаяся волна света по бутонам
       const iridWave = prefersReducedMotion
         ? 0
-        : Math.sin(py0 * 3.1 - timeSec * 2.2 + ptPhase[i] * 0.7) * 0.13;
+        : Math.sin(py0 * 3.1 - timeSec * 2.2 + ptPhase[i] * 0.7) * 0.12;
 
       let pulseBoost = 0;
       if (shimmerActive) {
@@ -568,8 +671,8 @@
         }
       }
 
-      const depthCue = (rz2 + 0.8) * 0.18;
-      let lum = 0.22 + dot * 0.62 + ptBias[i] * 0.55 + depthCue + iridWave + pulseBoost;
+      const depthCue = (rz2 + 0.75) * 0.16;
+      let lum = 0.18 + dot * 0.62 + ptBias[i] * 0.54 + depthCue + iridWave + pulseBoost;
       if (lum < 0.05) lum = 0.05;
       if (lum > 1) lum = 1;
 
@@ -585,10 +688,10 @@
 
     bouquetCtx.clearRect(0, 0, bouquetPixelW, bouquetPixelH);
 
-    // Мерцающие звёздочки в пустых клетках неба за цветами
+    // Звёздное небо в пустых клетках
     for (let s = 0; s < bouquetStars.length; s += 1) {
       const st = bouquetStars[s];
-      const cIdx = st.row * B_COLS + st.col;
+      const cIdx = st.row * bCols + st.col;
       if (charBuf[cIdx] >= 0) continue;
 
       const tw = (Math.sin(timeSec * 2.4 + st.phase) + 1) * 0.5;
@@ -609,11 +712,11 @@
       );
     }
 
-    // Отрисовка всего 3D ASCII-букета из одного атласа (без fillText)
-    for (let row = 0; row < B_ROWS; row += 1) {
+    // Отрисовка плотного цветного 3D ASCII-букета
+    for (let row = 0; row < bRows; row += 1) {
       const dy = row * atlasCellH;
-      const rowOffset = row * B_COLS;
-      for (let col = 0; col < B_COLS; col += 1) {
+      const rowOffset = row * bCols;
+      for (let col = 0; col < bCols; col += 1) {
         const idx = rowOffset + col;
         const ch = charBuf[idx];
         if (ch < 0) continue;
@@ -653,7 +756,6 @@
     }
   }
 
-  // Интерактивное вращение 3D-букета при наведении и клике
   bouquetCanvas.addEventListener('pointermove', (event) => {
     const rect = bouquetCanvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
