@@ -5,137 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>С 17-летием, любимая! 💌</title>
   <meta name="description" content="Интерактивная переливающаяся открытка ко дню рождения • Тебе 17!">
-  <meta name="theme-color" content="#fde2e8">
+  <meta name="theme-color" content="#fbc7de">
 
-  <!-- Встроенная SVG-иконка вкладки, чтобы не требовались лишние файлы -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23ff8fb7'/%3E%3Cstop offset='50%25' stop-color='%23f7a88e'/%3E%3Cstop offset='100%25' stop-color='%23b58bf2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23fff2f7'/%3E%3Cpath d='M32 49s-16-10.4-16-21.5C16 21.3 20.8 17 26.2 17c3.1 0 4.9 1.6 5.8 3.1.9-1.5 2.7-3.1 5.8-3.1C43.2 17 48 21.3 48 27.5 48 38.6 32 49 32 49z' fill='url(%23g)'/%3E%3C/svg%3E">
+  <!-- Встроенная SVG-иконка вкладки -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23ff6fa8'/%3E%3Cstop offset='50%25' stop-color='%23ffb088'/%3E%3Cstop offset='100%25' stop-color='%23a67cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23fff0f7'/%3E%3Cpath d='M32 49s-16-10.4-16-21.5C16 21.3 20.8 17 26.2 17c3.1 0 4.9 1.6 5.8 3.1.9-1.5 2.7-3.1 5.8-3.1C43.2 17 48 21.3 48 27.5 48 38.6 32 49 32 49z' fill='url(%23g)'/%3E%3C/svg%3E">
 
-  <!-- Красивые кириллические шрифты Google Fonts -->
+  <!-- Кириллические шрифты Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@400;500&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css">
+  <!-- ?v=3 сбрасывает старый кэш браузера и GitHub Pages -->
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
-  <!-- Переливающийся шёлково-перламутровый фон -->
+  <!-- Лёгкий GPU-переливающийся пастельно-перламутровый фон (без тяжёлых blur-фильтров) -->
   <div class="ambient-bg" aria-hidden="true">
-    <span class="aurora-veil"></span>
-    <span class="blob blob-pink"></span>
-    <span class="blob blob-lavender"></span>
-    <span class="blob blob-peach"></span>
-    <span class="blob blob-pearl"></span>
+    <span class="silk-layer silk-a"></span>
+    <span class="silk-layer silk-b"></span>
+    <span class="glow-orb orb-rose"></span>
+    <span class="glow-orb orb-lavender"></span>
+    <span class="glow-orb orb-peach"></span>
+    <span class="glow-orb orb-sky"></span>
   </div>
-
-  <!-- Слой 1 (задний): падающие перламутровые лепестки, символы и восходящие искры -->
-  <canvas id="petals-canvas" class="canvas-layer canvas-petals" aria-hidden="true"></canvas>
 
   <main class="viewport">
     <!-- =======================================================
-         ЭКРАН 1: ИНТЕРАКТИВНЫЙ КОНВЕРТИК
+         ЭКРАН 1: ГОЛОГРАФИЧЕСКИЙ КОНВЕРТИК
          ======================================================= -->
     <section id="envelope-screen" class="screen envelope-screen" aria-label="Приглашение открыть открытку">
-      <div class="envelope-card glass-panel">
-        <p class="symbol-ribbon wave-symbols" aria-hidden="true">
-          <span class="sym">୨୧</span>
-          <span class="sym">˚₊·</span>
-          <span class="sym">͟͟͞͞➳❥</span>
-          <span class="sym">✿</span>
-          <span class="sym">❀</span>
-          <span class="sym">❁</span>
-        </p>
+      <div class="holo-shell envelope-shell">
+        <span class="holo-spinner" aria-hidden="true"></span>
+        <div class="glass-surface envelope-card">
+          <span class="card-sheen" aria-hidden="true"></span>
 
-        <div class="envelope-stage">
-          <!-- Живой ореол из символов вокруг конверта -->
-          <div class="symbol-orbit" aria-hidden="true">
-            <span class="orbit-sym orbit-1">✿</span>
-            <span class="orbit-sym orbit-2">♡</span>
-            <span class="orbit-sym orbit-3">✧</span>
-            <span class="orbit-sym orbit-4">❀</span>
-            <span class="orbit-sym orbit-5">✨</span>
-            <span class="orbit-sym orbit-6">୨୧</span>
+          <p class="symbol-ribbon wave-symbols" aria-hidden="true">
+            <span class="sym">╔═</span>
+            <span class="sym">୨୧</span>
+            <span class="sym">✿</span>
+            <span class="sym">♡</span>
+            <span class="sym">❀</span>
+            <span class="sym">୨୧</span>
+            <span class="sym">═╗</span>
+          </p>
+
+          <div class="envelope-stage">
+            <div class="symbol-orbit" aria-hidden="true">
+              <span class="orbit-sym orbit-1">✿</span>
+              <span class="orbit-sym orbit-2">♡</span>
+              <span class="orbit-sym orbit-3">✧</span>
+              <span class="orbit-sym orbit-4">❀</span>
+              <span class="orbit-sym orbit-5">✨</span>
+              <span class="orbit-sym orbit-6">୨୧</span>
+            </div>
+
+            <div
+              id="envelope"
+              class="envelope"
+              role="button"
+              tabindex="0"
+              aria-label="Нажми, чтобы открыть конвертик"
+            >
+              <div class="envelope-back"></div>
+
+              <div class="envelope-letter" aria-hidden="true">
+                <span class="letter-badge holo-text">17 ♡</span>
+                <span class="letter-flora">˚₊· ͟͟͞͞➳❥ ✿</span>
+              </div>
+
+              <div class="envelope-pocket" aria-hidden="true">
+                <div class="envelope-pocket-left"></div>
+                <div class="envelope-pocket-right"></div>
+                <div class="envelope-pocket-bottom"></div>
+              </div>
+
+              <div class="envelope-flap">
+                <div class="envelope-flap-shape"></div>
+              </div>
+
+              <div class="envelope-seal" aria-hidden="true">
+                <span class="seal-ring"></span>
+                <span>♡</span>
+              </div>
+            </div>
           </div>
 
-          <div
-            id="envelope"
-            class="envelope"
-            role="button"
-            tabindex="0"
-            aria-label="Нажми, чтобы открыть конвертик"
-          >
-            <div class="envelope-back"></div>
+          <!-- ПЕРСОНАЛИЗАЦИЯ: при желании можно добавить её имя в подзаголовок -->
+          <p class="envelope-subtitle">Для самой лучшей девушки • Тебе 17!</p>
 
-            <div class="envelope-letter" aria-hidden="true">
-              <span class="letter-badge shimmer-text">17 ♡</span>
-              <span class="letter-flora">✿ ❀ ❁</span>
-            </div>
+          <button id="open-card-btn" class="primary-btn" type="button">
+            <span class="btn-sheen" aria-hidden="true"></span>
+            <span class="btn-label">Открыть открытку 💌</span>
+          </button>
 
-            <div class="envelope-pocket" aria-hidden="true">
-              <div class="envelope-pocket-left"></div>
-              <div class="envelope-pocket-right"></div>
-              <div class="envelope-pocket-bottom"></div>
-            </div>
-
-            <div class="envelope-flap">
-              <div class="envelope-flap-shape"></div>
-            </div>
-
-            <div class="envelope-seal" aria-hidden="true">♡</div>
-          </div>
+          <p class="tap-hint" aria-hidden="true">✦ коснись экрана в любом месте — полетят сердечки ✦</p>
         </div>
-
-        <!-- ПЕРСОНАЛИЗАЦИЯ: при желании можно добавить её имя в подзаголовок -->
-        <p class="envelope-subtitle">Для самой лучшей девушки • Тебе 17!</p>
-
-        <button id="open-card-btn" class="primary-btn" type="button">
-          <span class="btn-label">Открыть открытку 💌</span>
-        </button>
-
-        <p class="tap-hint" aria-hidden="true">✦ нажми в любом месте экрана, чтобы рассыпать сердечки и звёздочки ✦</p>
       </div>
     </section>
 
     <!-- =======================================================
-         ЭКРАН 2: ОСНОВНАЯ ОТКРЫТКА
+         ЭКРАН 2: ПЕРЕЛИВАЮЩАЯСЯ ОТКРЫТКА С ЖИВЫМ ASCII-БУКЕТОМ
          ======================================================= -->
     <section id="card-screen" class="screen card-screen is-hidden" aria-label="Поздравительная открытка" hidden>
-      <article class="birthday-card glass-panel">
-        <header class="card-header reveal-item">
-          <div class="age-pill">
-            <span class="pill-sym">✿</span>
-            <span>17 лет • особенный день</span>
-            <span class="pill-sym">✿</span>
-          </div>
+      <div class="holo-shell card-shell">
+        <span class="holo-spinner" aria-hidden="true"></span>
+        <article class="glass-surface birthday-card">
+          <span class="card-sheen" aria-hidden="true"></span>
 
-          <!-- ПЕРСОНАЛИЗАЦИЯ: сюда можно вписать имя девушки, например: «С 17-летием, Аня!» -->
-          <h1 class="card-title shimmer-text">С 17-летием, любимая!</h1>
+          <header class="card-header reveal-item">
+            <div class="age-pill">
+              <span class="pill-sym">✿</span>
+              <span>17 лет • особенный день</span>
+              <span class="pill-sym">✿</span>
+            </div>
 
-          <p class="symbol-divider wave-symbols" aria-hidden="true">
-            <span class="sym">˚₊·</span>
-            <span class="sym">͟͟͞͞➳❥</span>
-            <span class="sym">୨୧</span>
-            <span class="sym">♡</span>
-            <span class="sym">୨୧</span>
-            <span class="sym">˚₊·</span>
-            <span class="sym">͟͟͞͞➳❥</span>
-          </p>
-        </header>
+            <!-- ПЕРСОНАЛИЗАЦИЯ: сюда можно вписать имя девушки, например: «С 17-летием, Аня!» -->
+            <h1 class="card-title holo-text">С 17-летием, любимая!</h1>
 
-        <!-- Живой анимированный ASCII-букет в моноширинном шрифте -->
-        <section class="bouquet-box reveal-item" aria-label="Живой символьный букет цветов">
-          <p class="bouquet-garland wave-symbols" aria-hidden="true">
-            <span class="sym">✿</span>
-            <span class="sym">❀</span>
-            <span class="sym">❁</span>
-            <span class="sym">୨୧</span>
-            <span class="sym">♡</span>
-            <span class="sym">୨୧</span>
-            <span class="sym">❁</span>
-            <span class="sym">❀</span>
-            <span class="sym">✿</span>
-          </p>
+            <p class="symbol-divider wave-symbols" aria-hidden="true">
+              <span class="sym">˚₊·</span>
+              <span class="sym">͟͟͞͞➳❥</span>
+              <span class="sym">୨୧</span>
+              <span class="sym">♡</span>
+              <span class="sym">୨୧</span>
+              <span class="sym">˚₊·</span>
+              <span class="sym">͟͟͞͞➳❥</span>
+            </p>
+          </header>
 
-          <div class="bouquet-pre-wrap">
+          <!-- Контрастная тёмно-сливовая бархатная сцена, на которой сияет ASCII-букет -->
+          <section class="bouquet-stage reveal-item" aria-label="Живой сияющий символьный букет цветов">
+            <p class="bouquet-garland wave-symbols" aria-hidden="true">
+              <span class="sym">✿</span>
+              <span class="sym">❀</span>
+              <span class="sym">❁</span>
+              <span class="sym">୨୧</span>
+              <span class="sym">♡</span>
+              <span class="sym">୨୧</span>
+              <span class="sym">❁</span>
+              <span class="sym">❀</span>
+              <span class="sym">✿</span>
+            </p>
+
+            <div class="bouquet-pre-wrap">
 <pre id="ascii-bouquet" class="ascii-bouquet" aria-label="Анимированный букет цветов из символов">  <span class="spark" data-spark="0"> </span>      <span class="spark" data-spark="1">+</span>           <span class="spark" data-spark="2">*</span>      <span class="spark" data-spark="3"> </span>  
  <span class="spark" data-spark="4">.</span>      <span class="blossom-rose">.---.</span>  <span class="spark" data-spark="5"> </span>  <span class="blossom-lavender">.---.</span>      <span class="spark" data-spark="6">.</span> 
    <span class="spark" data-spark="7"> </span>  <span class="blossom-rose">.' <span class="blossom-gold" data-core="0">*o*</span> '.</span> <span class="blossom-lavender">.' <span class="blossom-gold" data-core="1">*o*</span> '.</span>  <span class="spark" data-spark="8"> </span>   
@@ -152,72 +164,76 @@
          <span class="wrap">`.</span>  <span class="ribbon">/ | \</span>  <span class="wrap">.'</span>         
            <span class="wrap">`.</span>  <span class="ribbon">|</span>  <span class="wrap">.'</span>           
              <span class="wrap">`.</span><span class="ribbon">v</span><span class="wrap">.'</span>             </pre>
-          </div>
-
-          <p class="bouquet-caption">
-            <span id="caption-twinkle-left" class="twinkle-sym">✧</span>
-            ˚₊· ͟͟͞͞➳❥ букетик, который сияет и не завянет 🌸
-            <span id="caption-twinkle-right" class="twinkle-sym">✦</span>
-          </p>
-        </section>
-
-        <!-- =======================================================
-             ПЕРСОНАЛИЗАЦИЯ ПОЗДРАВЛЕНИЯ:
-             Здесь можно изменить текст, добавить имя девушки,
-             ваши любимые совместные моменты или тёплые прозвища.
-             ======================================================= -->
-        <section class="message-body reveal-item">
-          <p>
-            С днём рождения, моё самое родное чудо! Сегодня тебе исполняется 17 —
-            такой светлый, нежный и красивый возраст, и мне так хочется, чтобы каждый твой день
-            был наполнен теплом, искренним смехом и ощущением, как сильно тебя любят.
-          </p>
-
-          <p>
-            Я люблю тебя невероятно сильно — за твою улыбку, от которой сразу становится спокойно на душе,
-            за твой голос, за твою доброту и за то, какая ты настоящая. Рядом с тобой даже самые обычные
-            дни становятся ярче, теплее и счастливее, и каждый момент вместе я бережно храню в сердце.
-          </p>
-
-          <!-- ПЕРСОНАЛИЗАЦИЯ: раскомментируй или измени блок ниже, если хочешь добавить личное пожелание -->
-          <!--
-          <p>
-            Я до сих пор улыбаюсь, когда вспоминаю [ваше особенное воспоминание] ♡
-          </p>
-          -->
-
-          <p>
-            Пусть в твои 17 лет рядом всегда будут счастье, вдохновение и люди, которые ценят тебя так же сильно,
-            как я. Обещаю всегда быть твоей поддержкой, обнимать крепко-крепко и радовать тебя каждый день.
-          </p>
-
-          <p class="signature shimmer-text">
-            <!-- ПЕРСОНАЛИЗАЦИЯ: можешь дописать своё имя после слова «твой» -->
-            Бесконечно люблю тебя, твой ♡ ✿
-          </p>
-        </section>
-
-        <footer class="card-actions reveal-item">
-          <button id="hug-btn" class="primary-btn hug-btn" type="button">
-            <span class="btn-label">Нажми, чтобы получить обнимашки и цветочек</span>
-          </button>
-
-          <!-- Всплывающее окошко с нежными комплиментами -->
-          <div id="compliment-box" class="compliment-box" aria-live="polite" hidden>
-            <div class="compliment-meta">
-              <span id="compliment-badge" class="compliment-badge">✧ обнимашки отправлены ♡</span>
-              <span id="hug-counter" class="hug-counter">1 🌸</span>
             </div>
-            <p id="compliment-text" class="compliment-text"></p>
-          </div>
-        </footer>
-      </article>
+
+            <div class="ascii-pulse-bar" aria-hidden="true">
+              <span id="ascii-wave-line">[ · . * o O ♡ O o * . · ]</span>
+            </div>
+
+            <p class="bouquet-caption">
+              ˚₊· ͟͟͞͞➳❥ букетик, который сияет для тебя вечно 🌸
+            </p>
+          </section>
+
+          <!-- =======================================================
+               ПЕРСОНАЛИЗАЦИЯ ПОЗДРАВЛЕНИЯ:
+               Здесь можно изменить текст, добавить имя девушки,
+               ваши любимые совместные моменты или тёплые прозвища.
+               ======================================================= -->
+          <section class="message-body reveal-item">
+            <p>
+              С днём рождения, моё самое родное чудо! Сегодня тебе исполняется 17 —
+              такой светлый, нежный и красивый возраст, и мне так хочется, чтобы каждый твой день
+              был наполнен теплом, искренним смехом и ощущением, как сильно тебя любят.
+            </p>
+
+            <p>
+              Я люблю тебя невероятно сильно — за твою улыбку, от которой сразу становится спокойно на душе,
+              за твой голос, за твою доброту и за то, какая ты настоящая. Рядом с тобой даже самые обычные
+              дни становятся ярче, теплее и счастливее, и каждый момент вместе я бережно храню в сердце.
+            </p>
+
+            <!-- ПЕРСОНАЛИЗАЦИЯ: раскомментируй или измени блок ниже, если хочешь добавить личное пожелание -->
+            <!--
+            <p>
+              Я до сих пор улыбаюсь, когда вспоминаю [ваше особенное воспоминание] ♡
+            </p>
+            -->
+
+            <p>
+              Пусть в твои 17 лет рядом всегда будут счастье, вдохновение и люди, которые ценят тебя так же сильно,
+              как я. Обещаю всегда быть твоей поддержкой, обнимать крепко-крепко и радовать тебя каждый день.
+            </p>
+
+            <p class="signature holo-text">
+              <!-- ПЕРСОНАЛИЗАЦИЯ: можешь дописать своё имя после слова «твой» -->
+              Бесконечно люблю тебя, твой ♡ ✿
+            </p>
+          </section>
+
+          <footer class="card-actions reveal-item">
+            <button id="hug-btn" class="primary-btn hug-btn" type="button">
+              <span class="btn-sheen" aria-hidden="true"></span>
+              <span class="btn-label">Нажми, чтобы получить обнимашки и цветочек</span>
+            </button>
+
+            <!-- Всплывающее окошко с нежными комплиментами -->
+            <div id="compliment-box" class="compliment-box" aria-live="polite" hidden>
+              <div class="compliment-meta">
+                <span id="compliment-badge" class="compliment-badge">✧ обнимашки отправлены ♡</span>
+                <span id="hug-counter" class="hug-counter">1 🌸</span>
+              </div>
+              <p id="compliment-text" class="compliment-text"></p>
+            </div>
+          </footer>
+        </article>
+      </div>
     </section>
   </main>
 
-  <!-- Слой 2 (передний): интерактивные клики, след и салют-сердце из символов -->
-  <canvas id="burst-canvas" class="canvas-layer canvas-burst" aria-hidden="true"></canvas>
+  <!-- Единый быстрый спрайтовый Canvas для символов, лепестков и салюта-сердца -->
+  <canvas id="fx-canvas" class="canvas-fx" aria-hidden="true"></canvas>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>

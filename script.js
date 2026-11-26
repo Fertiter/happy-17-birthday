@@ -25,14 +25,13 @@
     '୨୧ нежный комплимент для тебя'
   ];
 
-  // Палитра оттенков HSL для плавного переливания (розовый, персик, золото, лаванда)
-  const IRIDESCENT_HUES = [336, 350, 18, 40, 278, 315];
-  const CLICK_SYMBOLS = ['♡', '✿', '✨', '❀', '❁', '✦', '✧'];
-  const SALUTE_SYMBOLS = ['♡', '♥', '✿', '❀', '❁', '🌸', '✨', '୨୧', '✦'];
-  const TRAIL_SYMBOLS = ['✧', '✦', '♡', '✿', '·'];
+  const PALETTE = ['#ff5e9c', '#ff9370', '#f5bd42', '#56b8f5', '#a66dff', '#ff7eb8'];
+  const AMBIENT_KEYS = ['petal', 'petal', '♡', '✿', '❀', '✦', '✧'];
+  const CLICK_KEYS = ['♡', '✿', '✨', '❀', '❁', '✦', '✧'];
+  const SALUTE_KEYS = ['♡', '♥', '✿', '❀', '❁', '🌸', '✨', '୨୧', '✦'];
+  const MAX_BURST_PARTICLES = 160;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
 
   /* =========================================================
      ЭЛЕМЕНТЫ ИНТЕРФЕЙСА
@@ -48,48 +47,81 @@
   const complimentText = document.getElementById('compliment-text');
   const hugCounterEl = document.getElementById('hug-counter');
 
-  const petalsCanvas = document.getElementById('petals-canvas');
-  const petalsCtx = petalsCanvas.getContext('2d');
-  const burstCanvas = document.getElementById('burst-canvas');
-  const burstCtx = burstCanvas.getContext('2d');
+  const asciiWaveLine = document.getElementById('ascii-wave-line');
+  const fxCanvas = document.getElementById('fx-canvas');
+  const fxCtx = fxCanvas.getContext('2d');
 
   let viewWidth = window.innerWidth;
   let viewHeight = window.innerHeight;
   let hasOpenedCard = false;
-  let bgRafId = null;
-  let burstRafId = null;
+  let rafId = null;
 
   /* =========================================================
-     ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ЦВЕТА И РАЗМЕРОВ
+     ПРЕДВАРИТЕЛЬНЫЙ РЕНДЕР СПРАЙТОВ (ZERO-LAG 60-120 FPS)
+     Символы рисуются на мини-канвасы 1 раз при запуске,
+     а в анимации используется только быстрый drawImage().
      ========================================================= */
-  function pickHue() {
-    return IRIDESCENT_HUES[Math.floor(Math.random() * IRIDESCENT_HUES.length)];
+  const SPRITE_SIZE = 44;
+  const spriteBank = new Map();
+
+  function drawVectorPetal(ctx, half) {
+    const r = half * 0.56;
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.bezierCurveTo(r * 1.15, -r * 0.65, r * 1.05, r * 0.72, 0, r);
+    ctx.bezierCurveTo(-r * 1.05, r * 0.72, -r * 1.15, -r * 0.65, 0, -r);
+    ctx.closePath();
+    ctx.fill();
   }
 
-  function hslColor(hue, sat = 84, light = 72) {
-    const normalized = ((hue % 360) + 360) % 360;
-    return `hsl(${normalized.toFixed(1)}, ${sat}%, ${light}%)`;
+  function buildSprite(key, color) {
+    const off = document.createElement('canvas');
+    off.width = SPRITE_SIZE;
+    off.height = SPRITE_SIZE;
+    const ctx = off.getContext('2d');
+    const half = SPRITE_SIZE / 2;
+
+    ctx.translate(half, half);
+    ctx.fillStyle = color;
+
+    if (key === 'petal') {
+      drawVectorPetal(ctx, half);
+    } else {
+      ctx.font = '26px "Nunito", "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(key, 0, 1);
+    }
+    return off;
   }
 
-  function resizeCanvases() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  function initSpriteBank() {
+    const uniqueKeys = Array.from(new Set([...AMBIENT_KEYS, ...CLICK_KEYS, ...SALUTE_KEYS]));
+    uniqueKeys.forEach((key) => {
+      const variants = PALETTE.map((color) => buildSprite(key, color));
+      spriteBank.set(key, variants);
+    });
+  }
+
+  function getSprite(key, colorIdx) {
+    const variants = spriteBank.get(key) || spriteBank.get('♡');
+    return variants[((colorIdx % variants.length) + variants.length) % variants.length];
+  }
+
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     viewWidth = window.innerWidth;
     viewHeight = window.innerHeight;
 
-    [petalsCanvas, burstCanvas].forEach((canvas) => {
-      canvas.width = Math.floor(viewWidth * dpr);
-      canvas.height = Math.floor(viewHeight * dpr);
-      canvas.style.width = `${viewWidth}px`;
-      canvas.style.height = `${viewHeight}px`;
-    });
-
-    petalsCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    burstCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fxCanvas.width = Math.floor(viewWidth * dpr);
+    fxCanvas.height = Math.floor(viewHeight * dpr);
+    fxCanvas.style.width = `${viewWidth}px`;
+    fxCanvas.style.height = `${viewHeight}px`;
+    fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   /* =========================================================
-     ЖИВОЙ АНИМИРОВАННЫЙ ASCII-БУКЕТ (ПОКАДРОВАЯ СМЕНА СИМВОЛОВ)
-     Все символы строго 1-колоночные ASCII — вёрстка никогда не сдвигается.
+     ЖИВОЙ АНИМИРОВАННЫЙ ASCII-БУКЕТ И ПУЛЬС-ПАНЕЛЬ
      ========================================================= */
   const sparkEls = Array.from(document.querySelectorAll('#ascii-bouquet [data-spark]'));
   const coreEls = Array.from(document.querySelectorAll('#ascii-bouquet [data-core]'));
@@ -101,6 +133,13 @@
   const PETAL_FRAMES = ['*', 'o', '+', ':', '*'];
   const KNOT_FRAMES = ['*', 'o', '+', '@'];
 
+  const HEARTBEAT_BAR_FRAMES = [
+    '[ · . * o O ♡ O o * . · ]',
+    '[ . * o O ♡ ✿ ♡ O o * . ]',
+    '[ * o O ♡ ✿ ♥ ✿ ♡ O o * ]',
+    '[ . * o O ♡ ✿ ♡ O o * . ]'
+  ];
+
   let asciiTick = 0;
   let asciiTimer = null;
 
@@ -109,22 +148,23 @@
     asciiTick += 1;
 
     sparkEls.forEach((el, idx) => {
-      const frameIdx = (asciiTick + idx * 2) % SPARK_FRAMES.length;
-      el.textContent = SPARK_FRAMES[frameIdx];
+      el.textContent = SPARK_FRAMES[(asciiTick + idx * 2) % SPARK_FRAMES.length];
     });
 
     coreEls.forEach((el, idx) => {
-      const frameIdx = Math.floor((asciiTick + idx) / 2) % CORE_FRAMES.length;
-      el.textContent = CORE_FRAMES[frameIdx];
+      el.textContent = CORE_FRAMES[Math.floor((asciiTick + idx) / 2) % CORE_FRAMES.length];
     });
 
     petalEls.forEach((el, idx) => {
-      const frameIdx = Math.floor((asciiTick + idx * 2) / 3) % PETAL_FRAMES.length;
-      el.textContent = PETAL_FRAMES[frameIdx];
+      el.textContent = PETAL_FRAMES[Math.floor((asciiTick + idx * 2) / 3) % PETAL_FRAMES.length];
     });
 
     if (knotEl) {
       knotEl.textContent = KNOT_FRAMES[Math.floor(asciiTick / 2) % KNOT_FRAMES.length];
+    }
+
+    if (asciiWaveLine) {
+      asciiWaveLine.textContent = HEARTBEAT_BAR_FRAMES[asciiTick % HEARTBEAT_BAR_FRAMES.length];
     }
   }
 
@@ -135,278 +175,124 @@
   }
 
   /* =========================================================
-     СЛОЙ 1: ПЕРЕЛИВАЮЩИЕСЯ ЛЕПЕСТКИ, СИМВОЛЫ И ВОСХОДЯЩИЕ ИСКРЫ
+     ЕДИНЫЙ ХОЛСТ: ЛЕПЕСТКИ + КЛИКИ + САЛЮТ-СЕРДЦЕ
      ========================================================= */
-  const fallingItems = [];
-  const risingSparks = [];
-  const BG_SYMBOLS = ['♡', '✿', '❀', '❁', '✦', '✧', '୨୧'];
-
-  function createFallingItem(startFromTop = false) {
-    const isSymbol = Math.random() < 0.48;
-    const size = isSymbol ? 11 + Math.random() * 10 : 7 + Math.random() * 8;
-    return {
-      isSymbol,
-      symbol: BG_SYMBOLS[Math.floor(Math.random() * BG_SYMBOLS.length)],
-      baseHue: pickHue(),
-      hueSpeed: 0.25 + Math.random() * 0.35,
-      x: Math.random() * viewWidth,
-      y: startFromTop ? -26 - Math.random() * 40 : Math.random() * viewHeight,
-      size,
-      speedY: 0.42 + Math.random() * 0.72,
-      swayAmp: 0.45 + Math.random() * 0.85,
-      swayFreq: 0.008 + Math.random() * 0.012,
-      phase: Math.random() * Math.PI * 2,
-      angle: Math.random() * Math.PI * 2,
-      spin: (Math.random() - 0.5) * 0.022,
-      alpha: 0.36 + Math.random() * 0.44
-    };
-  }
-
-  function createRisingSpark(startFromBottom = false) {
-    return {
-      symbol: Math.random() < 0.5 ? '✧' : '·',
-      baseHue: pickHue(),
-      x: Math.random() * viewWidth,
-      y: startFromBottom ? viewHeight + 16 + Math.random() * 30 : Math.random() * viewHeight,
-      size: 10 + Math.random() * 7,
-      speedY: 0.32 + Math.random() * 0.52,
-      phase: Math.random() * Math.PI * 2,
-      twinkleSpeed: 0.03 + Math.random() * 0.04
-    };
-  }
-
-  function initBgParticles() {
-    fallingItems.length = 0;
-    risingSparks.length = 0;
-
-    const fallCount = Math.min(36, Math.max(18, Math.floor(viewWidth / 34)));
-    for (let i = 0; i < fallCount; i += 1) {
-      fallingItems.push(createFallingItem(false));
-    }
-
-    const sparkCount = Math.min(16, Math.max(8, Math.floor(viewWidth / 85)));
-    for (let i = 0; i < sparkCount; i += 1) {
-      risingSparks.push(createRisingSpark(false));
-    }
-  }
-
-  function drawPetalShape(ctx, size) {
-    ctx.beginPath();
-    ctx.moveTo(0, -size * 0.56);
-    ctx.bezierCurveTo(size * 0.7, -size * 0.42, size * 0.65, size * 0.46, 0, size * 0.62);
-    ctx.bezierCurveTo(-size * 0.65, size * 0.46, -size * 0.7, -size * 0.42, 0, -size * 0.56);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  function renderBgParticles(step = true) {
-    petalsCtx.clearRect(0, 0, viewWidth, viewHeight);
-    const now = performance.now() * 0.04;
-
-    for (let i = 0; i < risingSparks.length; i += 1) {
-      const s = risingSparks[i];
-      if (step) {
-        s.phase += s.twinkleSpeed;
-        s.y -= s.speedY;
-        s.x += Math.sin(s.phase * 0.6) * 0.25;
-        if (s.y < -20) {
-          risingSparks[i] = createRisingSpark(true);
-          continue;
-        }
-      }
-
-      const twinkleAlpha = 0.22 + (Math.sin(s.phase) + 1) * 0.3;
-      petalsCtx.save();
-      petalsCtx.translate(s.x, s.y);
-      petalsCtx.globalAlpha = twinkleAlpha;
-      petalsCtx.fillStyle = hslColor(s.baseHue + now * 0.2, 86, 75);
-      petalsCtx.font = `${s.size}px "Nunito", "Segoe UI Emoji", sans-serif`;
-      petalsCtx.textAlign = 'center';
-      petalsCtx.textBaseline = 'middle';
-      petalsCtx.fillText(s.symbol, 0, 0);
-      petalsCtx.restore();
-    }
-
-    for (let i = 0; i < fallingItems.length; i += 1) {
-      const p = fallingItems[i];
-      if (step) {
-        p.phase += p.swayFreq;
-        p.y += p.speedY;
-        p.x += Math.sin(p.phase) * p.swayAmp;
-        p.angle += p.spin;
-        p.baseHue += p.hueSpeed;
-
-        if (p.y > viewHeight + 32) {
-          fallingItems[i] = createFallingItem(true);
-          continue;
-        }
-        if (p.x < -30) p.x = viewWidth + 24;
-        if (p.x > viewWidth + 30) p.x = -24;
-      }
-
-      petalsCtx.save();
-      petalsCtx.translate(p.x, p.y);
-      petalsCtx.rotate(p.angle);
-      petalsCtx.globalAlpha = p.alpha;
-      petalsCtx.fillStyle = hslColor(p.baseHue, 82, 72);
-
-      if (p.isSymbol) {
-        petalsCtx.font = `${p.size}px "Nunito", "Segoe UI Emoji", sans-serif`;
-        petalsCtx.textAlign = 'center';
-        petalsCtx.textBaseline = 'middle';
-        petalsCtx.fillText(p.symbol, 0, 0);
-      } else {
-        drawPetalShape(petalsCtx, p.size);
-      }
-
-      petalsCtx.restore();
-    }
-
-    if (!prefersReducedMotion && !document.hidden) {
-      bgRafId = requestAnimationFrame(() => renderBgParticles(true));
-    } else {
-      bgRafId = null;
-    }
-  }
-
-  /* =========================================================
-     СЛОЙ 2: КЛИКИ, СЛЕД И ПАРАМЕТРИЧЕСКИЙ САЛЮТ-СЕРДЦЕ
-     ========================================================= */
+  const ambientParticles = [];
   const burstParticles = [];
 
-  function ensureBurstLoop() {
-    if (burstRafId === null && !document.hidden) {
-      burstRafId = requestAnimationFrame(renderBurstParticles);
+  function createAmbientParticle(fromTop = false) {
+    const key = AMBIENT_KEYS[Math.floor(Math.random() * AMBIENT_KEYS.length)];
+    return {
+      key,
+      colorIdx: Math.floor(Math.random() * PALETTE.length),
+      x: Math.random() * viewWidth,
+      y: fromTop ? -26 - Math.random() * 40 : Math.random() * viewHeight,
+      size: key === 'petal' ? 13 + Math.random() * 9 : 14 + Math.random() * 8,
+      speedY: 0.45 + Math.random() * 0.65,
+      swayAmp: 0.35 + Math.random() * 0.75,
+      swayFreq: 0.012 + Math.random() * 0.014,
+      phase: Math.random() * Math.PI * 2,
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.025,
+      alpha: 0.32 + Math.random() * 0.25
+    };
+  }
+
+  function initAmbientParticles() {
+    ambientParticles.length = 0;
+    const count = prefersReducedMotion
+      ? 10
+      : Math.min(26, Math.max(14, Math.floor(viewWidth / 48)));
+    for (let i = 0; i < count; i += 1) {
+      ambientParticles.push(createAmbientParticle(false));
     }
   }
 
-  function addBurstParticle(opts) {
+  function pushBurst(opts) {
+    if (burstParticles.length >= MAX_BURST_PARTICLES) {
+      burstParticles.shift();
+    }
     burstParticles.push({
+      key: opts.key,
+      colorIdx: opts.colorIdx ?? Math.floor(Math.random() * PALETTE.length),
       x: opts.x,
       y: opts.y,
       vx: opts.vx,
       vy: opts.vy,
       gravity: opts.gravity ?? 0.06,
       drag: opts.drag ?? 0.975,
-      size: opts.size ?? 16,
-      symbol: opts.symbol,
-      hue: opts.hue ?? pickHue(),
-      hueSpeed: opts.hueSpeed ?? (0.8 + Math.random() * 1.4),
+      size: opts.size ?? 20,
       alpha: opts.alpha ?? 1,
-      decay: opts.decay ?? 0.015,
-      rotation: opts.rotation ?? (Math.random() - 0.5) * 0.4,
+      decay: opts.decay ?? 0.016,
+      angle: opts.angle ?? (Math.random() - 0.5) * 0.4,
       spin: opts.spin ?? (Math.random() - 0.5) * 0.07,
-      twinklePhase: Math.random() * Math.PI * 2
+      colorShiftTick: 0
     });
   }
 
   function spawnClickBloom(x, y) {
-    if (prefersReducedMotion) {
-      for (let i = 0; i < 5; i += 1) {
-        const angle = (Math.PI * 2 * i) / 5;
-        addBurstParticle({
-          x,
-          y,
-          vx: Math.cos(angle) * 1.4,
-          vy: Math.sin(angle) * 1.4 - 0.6,
-          size: 15,
-          symbol: CLICK_SYMBOLS[i % CLICK_SYMBOLS.length],
-          decay: 0.03
-        });
-      }
-      ensureBurstLoop();
-      return;
-    }
+    const baseColor = Math.floor(Math.random() * PALETTE.length);
+    const ringCount = prefersReducedMotion ? 4 : 8;
 
-    // Нежное кольцо из светящихся микро-символов вокруг точки нажатия
-    const ringCount = 8;
-    const baseHue = pickHue();
     for (let i = 0; i < ringCount; i += 1) {
-      const angle = (Math.PI * 2 * i) / ringCount;
-      addBurstParticle({
+      const a = (Math.PI * 2 * i) / ringCount;
+      pushBurst({
+        key: i % 2 === 0 ? '✧' : '♡',
+        colorIdx: baseColor + i,
         x,
         y,
-        vx: Math.cos(angle) * 2.5,
-        vy: Math.sin(angle) * 2.5,
-        gravity: 0.01,
+        vx: Math.cos(a) * 2.4,
+        vy: Math.sin(a) * 2.4,
+        gravity: 0.015,
         drag: 0.94,
-        size: 12,
-        symbol: i % 2 === 0 ? '✧' : '·',
-        hue: baseHue + i * 16,
-        hueSpeed: 1.6,
-        decay: 0.024,
-        spin: 0.05
+        size: 16,
+        decay: 0.024
       });
     }
 
-    // Основные вылетающие сердечки и цветочки
-    const scatterCount = 10;
+    const scatterCount = prefersReducedMotion ? 4 : 10;
     for (let i = 0; i < scatterCount; i += 1) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1.6 + Math.random() * 3.1;
-      addBurstParticle({
+      const a = Math.random() * Math.PI * 2;
+      const spd = 1.6 + Math.random() * 3.1;
+      pushBurst({
+        key: CLICK_KEYS[Math.floor(Math.random() * CLICK_KEYS.length)],
+        colorIdx: baseColor + i,
         x,
         y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.5,
-        gravity: 0.058,
-        drag: 0.978,
-        size: 14 + Math.random() * 10,
-        symbol: CLICK_SYMBOLS[Math.floor(Math.random() * CLICK_SYMBOLS.length)],
-        hue: baseHue + i * 14,
-        hueSpeed: 1.3,
-        decay: 0.015 + Math.random() * 0.009
+        vx: Math.cos(a) * spd,
+        vy: Math.sin(a) * spd - 1.4,
+        gravity: 0.06,
+        drag: 0.975,
+        size: 18 + Math.random() * 10,
+        decay: 0.016 + Math.random() * 0.008
       });
     }
-
-    ensureBurstLoop();
   }
 
-  function spawnTrailSpark(x, y) {
-    addBurstParticle({
-      x: x + (Math.random() - 0.5) * 8,
-      y: y + (Math.random() - 0.5) * 8,
-      vx: (Math.random() - 0.5) * 0.55,
-      vy: -0.45 - Math.random() * 0.55,
-      gravity: -0.005,
-      drag: 0.98,
-      size: 10 + Math.random() * 6,
-      symbol: TRAIL_SYMBOLS[Math.floor(Math.random() * TRAIL_SYMBOLS.length)],
-      hueSpeed: 1.8,
-      alpha: 0.82,
-      decay: 0.026,
-      spin: 0.04
-    });
-    ensureBurstLoop();
-  }
-
-  function spawnSaluteCluster(cx, cy, count = 26, power = 1) {
-    const startHue = pickHue();
+  function spawnSaluteCluster(cx, cy, count = 24, power = 1) {
+    const startColor = Math.floor(Math.random() * PALETTE.length);
     for (let i = 0; i < count; i += 1) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = (2.1 + Math.random() * 4.5) * power;
-      addBurstParticle({
+      const a = Math.random() * Math.PI * 2;
+      const spd = (2.1 + Math.random() * 4.3) * power;
+      pushBurst({
+        key: SALUTE_KEYS[Math.floor(Math.random() * SALUTE_KEYS.length)],
+        colorIdx: startColor + i,
         x: cx,
         y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 2.3 * power,
-        gravity: 0.082,
-        drag: 0.974,
-        size: 16 + Math.random() * 13,
-        symbol: SALUTE_SYMBOLS[Math.floor(Math.random() * SALUTE_SYMBOLS.length)],
-        hue: startHue + i * 11,
-        hueSpeed: 1.5,
-        decay: 0.011 + Math.random() * 0.008
+        vx: Math.cos(a) * spd,
+        vy: Math.sin(a) * spd - 2.2 * power,
+        gravity: 0.08,
+        drag: 0.972,
+        size: 20 + Math.random() * 12,
+        decay: 0.012 + Math.random() * 0.007
       });
     }
-    ensureBurstLoop();
   }
 
-  // Салют-созвездие в форме сердца из переливающихся символов
   function spawnHeartFormation(cx, cy) {
-    const points = 34;
+    const points = 32;
     const scale = Math.min(viewWidth, viewHeight) * 0.0068;
-    const startHue = pickHue();
+    const startColor = Math.floor(Math.random() * PALETTE.length);
 
     for (let i = 0; i < points; i += 1) {
       const t = (Math.PI * 2 * i) / points;
@@ -418,23 +304,21 @@
         Math.cos(4 * t)
       );
 
-      addBurstParticle({
+      pushBurst({
+        key: i % 3 === 0 ? '♡' : i % 3 === 1 ? '✿' : '✨',
+        colorIdx: startColor + Math.floor(i / 4),
         x: cx,
         y: cy,
         vx: hx * scale * 0.145,
         vy: hy * scale * 0.145,
         gravity: 0.016,
         drag: 0.935,
-        size: i % 2 === 0 ? 18 : 15,
-        symbol: i % 3 === 0 ? '♡' : i % 3 === 1 ? '✿' : '✨',
-        hue: startHue + (i * 360) / points * 0.45,
-        hueSpeed: 1.7,
-        decay: 0.0088,
-        rotation: 0,
+        size: i % 2 === 0 ? 22 : 18,
+        decay: 0.009,
+        angle: 0,
         spin: 0.025
       });
     }
-    ensureBurstLoop();
   }
 
   function launchHeartSalute(originX, originY) {
@@ -443,60 +327,80 @@
       return;
     }
 
-    // 1. Фонтан сердечек и цветов прямо из кнопки
-    spawnSaluteCluster(originX, originY, 26, 1.05);
+    spawnSaluteCluster(originX, originY, 22, 1.05);
 
-    // 2. Большое символьное сердце-салют в центре неба
     window.setTimeout(() => {
       spawnHeartFormation(viewWidth * 0.5, viewHeight * 0.33);
-    }, 140);
+    }, 130);
 
-    // 3. Два боковых переливающихся залпа
     window.setTimeout(() => {
-      spawnSaluteCluster(viewWidth * 0.22, viewHeight * 0.36, 20, 0.92);
-      spawnSaluteCluster(viewWidth * 0.78, viewHeight * 0.32, 20, 0.92);
-    }, 320);
+      spawnSaluteCluster(viewWidth * 0.22, viewHeight * 0.36, 16, 0.9);
+      spawnSaluteCluster(viewWidth * 0.78, viewHeight * 0.32, 16, 0.9);
+    }, 300);
   }
 
-  function renderBurstParticles() {
-    burstCtx.clearRect(0, 0, viewWidth, viewHeight);
+  function renderFrame(step = true) {
+    fxCtx.clearRect(0, 0, viewWidth, viewHeight);
+
+    for (let i = 0; i < ambientParticles.length; i += 1) {
+      const p = ambientParticles[i];
+      if (step) {
+        p.phase += p.swayFreq;
+        p.y += p.speedY;
+        p.x += Math.sin(p.phase) * p.swayAmp;
+        p.angle += p.spin;
+
+        if (p.y > viewHeight + 30) {
+          ambientParticles[i] = createAmbientParticle(true);
+          continue;
+        }
+        if (p.x < -28) p.x = viewWidth + 24;
+        if (p.x > viewWidth + 28) p.x = -24;
+      }
+
+      const sprite = getSprite(p.key, p.colorIdx);
+      const half = p.size / 2;
+      fxCtx.save();
+      fxCtx.translate(p.x, p.y);
+      fxCtx.rotate(p.angle);
+      fxCtx.globalAlpha = p.alpha;
+      fxCtx.drawImage(sprite, -half, -half, p.size, p.size);
+      fxCtx.restore();
+    }
 
     for (let i = burstParticles.length - 1; i >= 0; i -= 1) {
-      const p = burstParticles[i];
-      p.vx *= p.drag;
-      p.vy = p.vy * p.drag + p.gravity;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rotation += p.spin;
-      p.hue += p.hueSpeed;
-      p.twinklePhase += 0.16;
-      p.alpha -= p.decay;
+      const b = burstParticles[i];
+      b.vx *= b.drag;
+      b.vy = b.vy * b.drag + b.gravity;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.angle += b.spin;
+      b.alpha -= b.decay;
+      b.colorShiftTick += 1;
 
-      if (p.alpha <= 0) {
+      if (b.colorShiftTick % 14 === 0) {
+        b.colorIdx += 1;
+      }
+
+      if (b.alpha <= 0) {
         burstParticles.splice(i, 1);
         continue;
       }
 
-      const shimmerLight = 68 + Math.sin(p.twinklePhase) * 9;
-      burstCtx.save();
-      burstCtx.translate(p.x, p.y);
-      burstCtx.rotate(p.rotation);
-      burstCtx.globalAlpha = Math.max(0, p.alpha);
-      burstCtx.fillStyle = hslColor(p.hue, 86, shimmerLight);
-      burstCtx.font = `${p.size}px "Nunito", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
-      burstCtx.textAlign = 'center';
-      burstCtx.textBaseline = 'middle';
-      burstCtx.fillText(p.symbol, 0, 0);
-      burstCtx.restore();
+      const sprite = getSprite(b.key, b.colorIdx);
+      const half = b.size / 2;
+      fxCtx.save();
+      fxCtx.translate(b.x, b.y);
+      fxCtx.rotate(b.angle);
+      fxCtx.globalAlpha = Math.max(0, b.alpha);
+      fxCtx.drawImage(sprite, -half, -half, b.size, b.size);
+      fxCtx.restore();
     }
 
-    if (burstParticles.length > 0 && !document.hidden) {
-      burstRafId = requestAnimationFrame(renderBurstParticles);
+    if (!prefersReducedMotion && !document.hidden) {
+      rafId = requestAnimationFrame(() => renderFrame(true));
     } else {
-      burstRafId = null;
-      if (burstParticles.length === 0) {
-        burstCtx.clearRect(0, 0, viewWidth, viewHeight);
-      }
+      rafId = null;
     }
   }
 
@@ -519,10 +423,10 @@
     envelope.classList.add('is-opening');
 
     const center = getElementCenter(triggerEl || envelope);
-    spawnSaluteCluster(center.x, center.y, 24, 0.95);
+    spawnSaluteCluster(center.x, center.y, 22, 0.92);
 
-    const openDelay = prefersReducedMotion ? 50 : 680;
-    const swapDelay = prefersReducedMotion ? 80 : 480;
+    const openDelay = prefersReducedMotion ? 50 : 620;
+    const swapDelay = prefersReducedMotion ? 80 : 420;
 
     window.setTimeout(() => {
       envelopeScreen.classList.add('is-hidden');
@@ -557,11 +461,12 @@
   openCardBtn.addEventListener('click', () => openCard(openCardBtn));
 
   /* =========================================================
-     КНОПКА «ОБНИМАШКИ И ЦВЕТОЧЕК» С НЕПОВТОРЯЮЩИМИСЯ ФРАЗАМИ
+     КНОПКА «ОБНИМАШКИ И ЦВЕТОЧЕК» С ПЕЧАТЬЮ ФРАЗ
      ========================================================= */
   let phraseBag = [];
   let lastPhraseIndex = -1;
   let hugCount = 0;
+  let typeTimer = null;
 
   function refillPhraseBag() {
     phraseBag = COMPLIMENTS.map((_, idx) => idx);
@@ -586,12 +491,42 @@
     return COMPLIMENTS[index];
   }
 
+  function typeTextSmoothly(targetEl, fullText) {
+    if (typeTimer !== null) {
+      window.clearInterval(typeTimer);
+      typeTimer = null;
+    }
+
+    if (prefersReducedMotion) {
+      targetEl.textContent = fullText;
+      return;
+    }
+
+    const chars =
+      typeof Intl !== 'undefined' && Intl.Segmenter
+        ? Array.from(
+            new Intl.Segmenter('ru', { granularity: 'grapheme' }).segment(fullText),
+            (seg) => seg.segment
+          )
+        : Array.from(fullText);
+    let cursor = 0;
+    targetEl.textContent = '';
+
+    typeTimer = window.setInterval(() => {
+      cursor = Math.min(chars.length, cursor + 3);
+      targetEl.textContent = chars.slice(0, cursor).join('');
+      if (cursor >= chars.length) {
+        window.clearInterval(typeTimer);
+        typeTimer = null;
+      }
+    }, 18);
+  }
+
   hugBtn.addEventListener('click', (event) => {
     hugCount += 1;
     const phrase = getNextCompliment();
 
     complimentBadge.textContent = BADGE_STATUSES[(hugCount - 1) % BADGE_STATUSES.length];
-    complimentText.textContent = phrase;
     hugCounterEl.textContent = `${hugCount} 🌸`;
 
     if (complimentBox.hidden) {
@@ -602,6 +537,8 @@
     void complimentBox.offsetWidth;
     complimentBox.classList.add('is-popping');
 
+    typeTextSmoothly(complimentText, phrase);
+
     const hasPointerCoords = event.clientX > 0 || event.clientY > 0;
     const origin = hasPointerCoords
       ? { x: event.clientX, y: event.clientY }
@@ -611,7 +548,7 @@
   });
 
   /* =========================================================
-     КЛИК / ТАП В ЛЮБОМ МЕСТЕ ЭКРАНА И ЛЁГКИЙ СЛЕД НА ДЕСКТОПЕ
+     КЛИК / ТАП В ЛЮБОМ МЕСТЕ ЭКРАНА
      ========================================================= */
   document.addEventListener('click', (event) => {
     if (event.target.closest('#hug-btn, #open-card-btn, #envelope')) {
@@ -623,47 +560,29 @@
     spawnClickBloom(event.clientX, event.clientY);
   });
 
-  if (hasFinePointer && !prefersReducedMotion) {
-    let lastTrailTime = 0;
-    document.addEventListener('mousemove', (event) => {
-      const now = performance.now();
-      if (now - lastTrailTime < 60) return;
-      lastTrailTime = now;
-      spawnTrailSpark(event.clientX, event.clientY);
-    });
-  }
-
   /* =========================================================
-     ИНИЦИАЛИЗАЦИЯ И ЭКОНОМИЯ БАТАРЕИ В ФОНОВОЙ ВКЛАДКЕ
+     ИНИЦИАЛИЗАЦИЯ И ОПТИМИЗАЦИЯ ПРИ СМЕНЕ ВКЛАДКИ
      ========================================================= */
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      if (bgRafId !== null) {
-        cancelAnimationFrame(bgRafId);
-        bgRafId = null;
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
       }
-      if (burstRafId !== null) {
-        cancelAnimationFrame(burstRafId);
-        burstRafId = null;
-      }
-    } else {
-      if (!prefersReducedMotion && bgRafId === null) {
-        renderBgParticles(true);
-      }
-      if (burstParticles.length > 0) {
-        ensureBurstLoop();
-      }
+    } else if (!prefersReducedMotion && rafId === null) {
+      renderFrame(true);
     }
   });
 
   window.addEventListener('resize', () => {
-    resizeCanvases();
+    resizeCanvas();
     if (prefersReducedMotion) {
-      renderBgParticles(false);
+      renderFrame(false);
     }
   });
 
-  resizeCanvases();
-  initBgParticles();
-  renderBgParticles(!prefersReducedMotion);
+  initSpriteBank();
+  resizeCanvas();
+  initAmbientParticles();
+  renderFrame(!prefersReducedMotion);
 })();
