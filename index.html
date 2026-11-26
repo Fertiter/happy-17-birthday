@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>С 17-летием, любимая! 💌</title>
-  <meta name="description" content="Небольшой тёплый сюрприз ко дню рождения • Тебе 17!">
+  <meta name="description" content="Интерактивная переливающаяся открытка ко дню рождения • Тебе 17!">
   <meta name="theme-color" content="#fde2e8">
 
   <!-- Встроенная SVG-иконка вкладки, чтобы не требовались лишние файлы -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23fde2e8'/%3E%3Cpath d='M32 49s-16-10.4-16-21.5C16 21.3 20.8 17 26.2 17c3.1 0 4.9 1.6 5.8 3.1.9-1.5 2.7-3.1 5.8-3.1C43.2 17 48 21.3 48 27.5 48 38.6 32 49 32 49z' fill='%23e7749c'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23ff8fb7'/%3E%3Cstop offset='50%25' stop-color='%23f7a88e'/%3E%3Cstop offset='100%25' stop-color='%23b58bf2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='%23fff2f7'/%3E%3Cpath d='M32 49s-16-10.4-16-21.5C16 21.3 20.8 17 26.2 17c3.1 0 4.9 1.6 5.8 3.1.9-1.5 2.7-3.1 5.8-3.1C43.2 17 48 21.3 48 27.5 48 38.6 32 49 32 49z' fill='url(%23g)'/%3E%3C/svg%3E">
 
   <!-- Красивые кириллические шрифты Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,14 +18,16 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Мягкие размытые пятна пастельного фона -->
+  <!-- Переливающийся шёлково-перламутровый фон -->
   <div class="ambient-bg" aria-hidden="true">
+    <span class="aurora-veil"></span>
     <span class="blob blob-pink"></span>
     <span class="blob blob-lavender"></span>
     <span class="blob blob-peach"></span>
+    <span class="blob blob-pearl"></span>
   </div>
 
-  <!-- Слой 1 (задний): плавно падающие лепестки и сердечки -->
+  <!-- Слой 1 (задний): падающие перламутровые лепестки, символы и восходящие искры -->
   <canvas id="petals-canvas" class="canvas-layer canvas-petals" aria-hidden="true"></canvas>
 
   <main class="viewport">
@@ -34,43 +36,62 @@
          ======================================================= -->
     <section id="envelope-screen" class="screen envelope-screen" aria-label="Приглашение открыть открытку">
       <div class="envelope-card glass-panel">
-        <p class="symbol-ribbon" aria-hidden="true">୨୧ ˚₊· ͟͟͞͞➳❥ ✿ ❀ ❁</p>
+        <p class="symbol-ribbon wave-symbols" aria-hidden="true">
+          <span class="sym">୨୧</span>
+          <span class="sym">˚₊·</span>
+          <span class="sym">͟͟͞͞➳❥</span>
+          <span class="sym">✿</span>
+          <span class="sym">❀</span>
+          <span class="sym">❁</span>
+        </p>
 
-        <div
-          id="envelope"
-          class="envelope"
-          role="button"
-          tabindex="0"
-          aria-label="Нажми, чтобы открыть конвертик"
-        >
-          <div class="envelope-back"></div>
-
-          <div class="envelope-letter" aria-hidden="true">
-            <span class="letter-badge">17 ♡</span>
-            <span class="letter-flora">✿ ❀ ❁</span>
+        <div class="envelope-stage">
+          <!-- Живой ореол из символов вокруг конверта -->
+          <div class="symbol-orbit" aria-hidden="true">
+            <span class="orbit-sym orbit-1">✿</span>
+            <span class="orbit-sym orbit-2">♡</span>
+            <span class="orbit-sym orbit-3">✧</span>
+            <span class="orbit-sym orbit-4">❀</span>
+            <span class="orbit-sym orbit-5">✨</span>
+            <span class="orbit-sym orbit-6">୨୧</span>
           </div>
 
-          <div class="envelope-pocket" aria-hidden="true">
-            <div class="envelope-pocket-left"></div>
-            <div class="envelope-pocket-right"></div>
-            <div class="envelope-pocket-bottom"></div>
-          </div>
+          <div
+            id="envelope"
+            class="envelope"
+            role="button"
+            tabindex="0"
+            aria-label="Нажми, чтобы открыть конвертик"
+          >
+            <div class="envelope-back"></div>
 
-          <div class="envelope-flap">
-            <div class="envelope-flap-shape"></div>
-          </div>
+            <div class="envelope-letter" aria-hidden="true">
+              <span class="letter-badge shimmer-text">17 ♡</span>
+              <span class="letter-flora">✿ ❀ ❁</span>
+            </div>
 
-          <div class="envelope-seal" aria-hidden="true">♡</div>
+            <div class="envelope-pocket" aria-hidden="true">
+              <div class="envelope-pocket-left"></div>
+              <div class="envelope-pocket-right"></div>
+              <div class="envelope-pocket-bottom"></div>
+            </div>
+
+            <div class="envelope-flap">
+              <div class="envelope-flap-shape"></div>
+            </div>
+
+            <div class="envelope-seal" aria-hidden="true">♡</div>
+          </div>
         </div>
 
         <!-- ПЕРСОНАЛИЗАЦИЯ: при желании можно добавить её имя в подзаголовок -->
         <p class="envelope-subtitle">Для самой лучшей девушки • Тебе 17!</p>
 
         <button id="open-card-btn" class="primary-btn" type="button">
-          <span>Открыть открытку 💌</span>
+          <span class="btn-label">Открыть открытку 💌</span>
         </button>
 
-        <p class="tap-hint" aria-hidden="true">✦ нажми в любом месте экрана, чтобы рассыпать сердечки ✦</p>
+        <p class="tap-hint" aria-hidden="true">✦ нажми в любом месте экрана, чтобы рассыпать сердечки и звёздочки ✦</p>
       </div>
     </section>
 
@@ -81,41 +102,62 @@
       <article class="birthday-card glass-panel">
         <header class="card-header reveal-item">
           <div class="age-pill">
-            <span>✿</span>
+            <span class="pill-sym">✿</span>
             <span>17 лет • особенный день</span>
-            <span>✿</span>
+            <span class="pill-sym">✿</span>
           </div>
 
           <!-- ПЕРСОНАЛИЗАЦИЯ: сюда можно вписать имя девушки, например: «С 17-летием, Аня!» -->
-          <h1 class="card-title">С 17-летием, любимая!</h1>
+          <h1 class="card-title shimmer-text">С 17-летием, любимая!</h1>
 
-          <p class="symbol-divider" aria-hidden="true">˚₊· ͟͟͞͞➳❥ ୨୧ ♡ ୨୧ ˚₊· ͟͟͞͞➳❥</p>
+          <p class="symbol-divider wave-symbols" aria-hidden="true">
+            <span class="sym">˚₊·</span>
+            <span class="sym">͟͟͞͞➳❥</span>
+            <span class="sym">୨୧</span>
+            <span class="sym">♡</span>
+            <span class="sym">୨୧</span>
+            <span class="sym">˚₊·</span>
+            <span class="sym">͟͟͞͞➳❥</span>
+          </p>
         </header>
 
-        <!-- Блок с аккуратным ASCII-букетом в моноширинном шрифте -->
-        <section class="bouquet-box reveal-item" aria-label="Символьный букет цветов">
-          <p class="bouquet-garland" aria-hidden="true">✿ ❀ ❁ ୨୧ ♡ ❁ ❀ ✿</p>
+        <!-- Живой анимированный ASCII-букет в моноширинном шрифте -->
+        <section class="bouquet-box reveal-item" aria-label="Живой символьный букет цветов">
+          <p class="bouquet-garland wave-symbols" aria-hidden="true">
+            <span class="sym">✿</span>
+            <span class="sym">❀</span>
+            <span class="sym">❁</span>
+            <span class="sym">୨୧</span>
+            <span class="sym">♡</span>
+            <span class="sym">୨୧</span>
+            <span class="sym">❁</span>
+            <span class="sym">❀</span>
+            <span class="sym">✿</span>
+          </p>
 
           <div class="bouquet-pre-wrap">
-<pre class="ascii-bouquet" aria-label="Букет цветов из символов">       <span class="blossom-rose">.---.</span>     <span class="blossom-lavender">.---.</span>
-     <span class="blossom-rose">.' <span class="blossom-gold">*o*</span> '.</span> <span class="blossom-lavender">.' <span class="blossom-gold">*o*</span> '.</span>
-     <span class="blossom-rose">'.  <span class="blossom-gold">*</span>  .'</span> <span class="blossom-lavender">'.  <span class="blossom-gold">*</span>  .'</span>
-  <span class="blossom-peach">.---.</span> <span class="blossom-rose">`-'</span> <span class="blossom-pink">.---.</span> <span class="blossom-lavender">`-'</span> <span class="blossom-peach">.---.</span>
-<span class="blossom-peach">.' <span class="blossom-gold">*o*</span> '.</span> <span class="blossom-pink">.' <span class="blossom-gold">*o*</span> '.</span> <span class="blossom-peach">.' <span class="blossom-gold">*o*</span> '.</span>
-<span class="blossom-peach">'.  <span class="blossom-gold">*</span>  .'</span> <span class="blossom-pink">'.  <span class="blossom-gold">*</span>  .'</span> <span class="blossom-peach">'.  <span class="blossom-gold">*</span>  .'</span>
-  <span class="blossom-peach">`---'</span> <span class="stem">\</span>   <span class="blossom-pink">`---'</span>   <span class="stem">/</span> <span class="blossom-peach">`---'</span>
-    <span class="stem">\    \    |    /    /</span>
-   <span class="wrap">__\____</span><span class="stem">\</span><span class="wrap">___</span><span class="stem">|</span><span class="wrap">___</span><span class="stem">/</span><span class="wrap">____/__</span>
-   <span class="wrap">\  `~.___</span>  <span class="stem">|</span>  <span class="wrap">___.~'  /</span>
-    <span class="wrap">`.</span>     <span class="ribbon">.-. .-.</span>     <span class="wrap">.'</span>
-      <span class="wrap">`.</span>   <span class="ribbon">\_(*)_/</span>   <span class="wrap">.'</span>
-        <span class="wrap">`.</span>  <span class="ribbon">/ | \</span>  <span class="wrap">.'</span>
-          <span class="wrap">`.</span>  <span class="ribbon">|</span>  <span class="wrap">.'</span>
-            <span class="wrap">`.</span><span class="ribbon">v</span><span class="wrap">.'</span></pre>
+<pre id="ascii-bouquet" class="ascii-bouquet" aria-label="Анимированный букет цветов из символов">  <span class="spark" data-spark="0"> </span>      <span class="spark" data-spark="1">+</span>           <span class="spark" data-spark="2">*</span>      <span class="spark" data-spark="3"> </span>  
+ <span class="spark" data-spark="4">.</span>      <span class="blossom-rose">.---.</span>  <span class="spark" data-spark="5"> </span>  <span class="blossom-lavender">.---.</span>      <span class="spark" data-spark="6">.</span> 
+   <span class="spark" data-spark="7"> </span>  <span class="blossom-rose">.' <span class="blossom-gold" data-core="0">*o*</span> '.</span> <span class="blossom-lavender">.' <span class="blossom-gold" data-core="1">*o*</span> '.</span>  <span class="spark" data-spark="8"> </span>   
+  <span class="spark" data-spark="9">*</span>   <span class="blossom-rose">'.  <span class="blossom-gold" data-petal="0">*</span>  .'</span> <span class="blossom-lavender">'.  <span class="blossom-gold" data-petal="1">*</span>  .'</span>   <span class="spark" data-spark="10">+</span>  
+   <span class="blossom-peach">.---.</span> <span class="blossom-rose">`-'</span> <span class="blossom-pink">.---.</span> <span class="blossom-lavender">`-'</span> <span class="blossom-peach">.---.</span>   
+ <span class="blossom-peach">.' <span class="blossom-gold" data-core="2">*o*</span> '.</span> <span class="blossom-pink">.' <span class="blossom-gold" data-core="3">*o*</span> '.</span> <span class="blossom-peach">.' <span class="blossom-gold" data-core="4">*o*</span> '.</span> 
+ <span class="blossom-peach">'.  <span class="blossom-gold" data-petal="2">*</span>  .'</span> <span class="blossom-pink">'.  <span class="blossom-gold" data-petal="3">*</span>  .'</span> <span class="blossom-peach">'.  <span class="blossom-gold" data-petal="4">*</span>  .'</span> 
+ <span class="spark" data-spark="11"> </span> <span class="blossom-peach">`---'</span> <span class="stem">\</span>   <span class="blossom-pink">`---'</span>   <span class="stem">/</span> <span class="blossom-peach">`---'</span> <span class="spark" data-spark="12"> </span> 
+  <span class="spark" data-spark="13">+</span>  <span class="stem">\    \    |    /    /</span>  <span class="spark" data-spark="14">*</span>  
+    <span class="wrap">__\____</span><span class="stem">\</span><span class="wrap">___</span><span class="stem">|</span><span class="wrap">___</span><span class="stem">/</span><span class="wrap">____/__</span>    
+    <span class="wrap">\  `~.___</span>  <span class="stem">|</span>  <span class="wrap">___.~'  /</span>    
+   <span class="spark" data-spark="15"> </span> <span class="wrap">`.</span>     <span class="ribbon">.-. .-.</span>     <span class="wrap">.'</span> <span class="spark" data-spark="16"> </span>   
+       <span class="wrap">`.</span>   <span class="ribbon">\_(<span class="knot" data-knot>*</span>)_/</span>   <span class="wrap">.'</span>       
+         <span class="wrap">`.</span>  <span class="ribbon">/ | \</span>  <span class="wrap">.'</span>         
+           <span class="wrap">`.</span>  <span class="ribbon">|</span>  <span class="wrap">.'</span>           
+             <span class="wrap">`.</span><span class="ribbon">v</span><span class="wrap">.'</span>             </pre>
           </div>
 
           <p class="bouquet-caption">
-            ˚₊· ͟͟͞͞➳❥ букетик, который никогда не завянет 🌸
+            <span id="caption-twinkle-left" class="twinkle-sym">✧</span>
+            ˚₊· ͟͟͞͞➳❥ букетик, который сияет и не завянет 🌸
+            <span id="caption-twinkle-right" class="twinkle-sym">✦</span>
           </p>
         </section>
 
@@ -149,7 +191,7 @@
             как я. Обещаю всегда быть твоей поддержкой, обнимать крепко-крепко и радовать тебя каждый день.
           </p>
 
-          <p class="signature">
+          <p class="signature shimmer-text">
             <!-- ПЕРСОНАЛИЗАЦИЯ: можешь дописать своё имя после слова «твой» -->
             Бесконечно люблю тебя, твой ♡ ✿
           </p>
@@ -157,13 +199,13 @@
 
         <footer class="card-actions reveal-item">
           <button id="hug-btn" class="primary-btn hug-btn" type="button">
-            <span>Нажми, чтобы получить обнимашки и цветочек</span>
+            <span class="btn-label">Нажми, чтобы получить обнимашки и цветочек</span>
           </button>
 
           <!-- Всплывающее окошко с нежными комплиментами -->
-          <div id="compliment-box" class="compliment-box is-empty" aria-live="polite" hidden>
+          <div id="compliment-box" class="compliment-box" aria-live="polite" hidden>
             <div class="compliment-meta">
-              <span id="compliment-badge" class="compliment-badge">обнимашки отправлены ♡</span>
+              <span id="compliment-badge" class="compliment-badge">✧ обнимашки отправлены ♡</span>
               <span id="hug-counter" class="hug-counter">1 🌸</span>
             </div>
             <p id="compliment-text" class="compliment-text"></p>
@@ -173,7 +215,7 @@
     </section>
   </main>
 
-  <!-- Слой 2 (передний): интерактивные клики и праздничный салют из сердечек -->
+  <!-- Слой 2 (передний): интерактивные клики, след и салют-сердце из символов -->
   <canvas id="burst-canvas" class="canvas-layer canvas-burst" aria-hidden="true"></canvas>
 
   <script src="script.js"></script>
