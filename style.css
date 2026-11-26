@@ -727,39 +727,32 @@ body {
   font-size: clamp(0.92rem, 2.9vw, 1.08rem);
 }
 
-.bouquet-pre-wrap {
+.bouquet-canvas-wrap {
+  width: min(100%, 490px);
+  margin: 0 auto;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 184, 224, 0.42);
+  background: radial-gradient(circle at 50% 42%, #241232 0%, #13091d 70%, #0b0512 100%);
+  box-shadow:
+    inset 0 0 28px rgba(176, 98, 224, 0.2),
+    0 10px 24px rgba(18, 8, 28, 0.42);
+}
+
+.bouquet-canvas {
+  display: block;
   width: 100%;
-  overflow-x: auto;
-  display: flex;
-  justify-content: center;
+  aspect-ratio: 1 / 1;
+  cursor: grab;
+  touch-action: pan-y;
 }
 
-.ascii-bouquet {
-  margin: 0;
-  display: inline-block;
-  text-align: left;
-  font-family: var(--font-mono);
-  font-size: clamp(0.6rem, 2.5vw, 0.9rem);
-  line-height: 1.28;
-  white-space: pre;
-  color: #ffeaf4;
-  user-select: none;
+.bouquet-canvas:active {
+  cursor: grabbing;
 }
-
-/* Яркие пастельно-неоновые оттенки на тёмном бархатном фоне */
-.blossom-rose { color: #ff7bb4; }
-.blossom-pink { color: #ffa0cf; }
-.blossom-lavender { color: #c9a4ff; }
-.blossom-peach { color: #ffb38c; }
-.blossom-gold { color: #ffe382; font-weight: 500; }
-.stem { color: #8be6b0; }
-.wrap { color: #e2b9cf; }
-.ribbon,
-.knot { color: #ff69aa; font-weight: 500; }
-.spark { color: #9de2ff; font-weight: 500; }
 
 .ascii-pulse-bar {
-  margin-top: 0.55rem;
+  margin-top: 0.65rem;
   font-family: var(--font-mono);
   font-size: clamp(0.72rem, 2.4vw, 0.86rem);
   color: #f6b6d8;
@@ -768,10 +761,17 @@ body {
 }
 
 .bouquet-caption {
-  margin: 0.45rem 0 0;
-  font-size: clamp(0.82rem, 2.5vw, 0.92rem);
+  margin: 0.42rem 0 0;
+  font-size: clamp(0.84rem, 2.5vw, 0.94rem);
   color: #f7d8ea;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.bouquet-hint {
+  margin: 0.28rem 0 0;
+  font-size: clamp(0.72rem, 2.2vw, 0.8rem);
+  color: rgba(242, 200, 226, 0.72);
+  user-select: none;
 }
 
 /* =========================================================
@@ -906,10 +906,6 @@ body {
 
   .glass-surface {
     border-radius: 21px;
-  }
-
-  .ascii-bouquet {
-    font-size: 0.58rem;
   }
 
   .signature {

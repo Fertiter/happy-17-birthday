@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@400;500&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- ?v=3 сбрасывает старый кэш браузера и GitHub Pages -->
-  <link rel="stylesheet" href="style.css?v=3">
+  <!-- ?v=4 сбрасывает старый кэш браузера и GitHub Pages -->
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <!-- Лёгкий GPU-переливающийся пастельно-перламутровый фон (без тяжёлых blur-фильтров) -->
@@ -147,23 +147,12 @@
               <span class="sym">✿</span>
             </p>
 
-            <div class="bouquet-pre-wrap">
-<pre id="ascii-bouquet" class="ascii-bouquet" aria-label="Анимированный букет цветов из символов">  <span class="spark" data-spark="0"> </span>      <span class="spark" data-spark="1">+</span>           <span class="spark" data-spark="2">*</span>      <span class="spark" data-spark="3"> </span>  
- <span class="spark" data-spark="4">.</span>      <span class="blossom-rose">.---.</span>  <span class="spark" data-spark="5"> </span>  <span class="blossom-lavender">.---.</span>      <span class="spark" data-spark="6">.</span> 
-   <span class="spark" data-spark="7"> </span>  <span class="blossom-rose">.' <span class="blossom-gold" data-core="0">*o*</span> '.</span> <span class="blossom-lavender">.' <span class="blossom-gold" data-core="1">*o*</span> '.</span>  <span class="spark" data-spark="8"> </span>   
-  <span class="spark" data-spark="9">*</span>   <span class="blossom-rose">'.  <span class="blossom-gold" data-petal="0">*</span>  .'</span> <span class="blossom-lavender">'.  <span class="blossom-gold" data-petal="1">*</span>  .'</span>   <span class="spark" data-spark="10">+</span>  
-   <span class="blossom-peach">.---.</span> <span class="blossom-rose">`-'</span> <span class="blossom-pink">.---.</span> <span class="blossom-lavender">`-'</span> <span class="blossom-peach">.---.</span>   
- <span class="blossom-peach">.' <span class="blossom-gold" data-core="2">*o*</span> '.</span> <span class="blossom-pink">.' <span class="blossom-gold" data-core="3">*o*</span> '.</span> <span class="blossom-peach">.' <span class="blossom-gold" data-core="4">*o*</span> '.</span> 
- <span class="blossom-peach">'.  <span class="blossom-gold" data-petal="2">*</span>  .'</span> <span class="blossom-pink">'.  <span class="blossom-gold" data-petal="3">*</span>  .'</span> <span class="blossom-peach">'.  <span class="blossom-gold" data-petal="4">*</span>  .'</span> 
- <span class="spark" data-spark="11"> </span> <span class="blossom-peach">`---'</span> <span class="stem">\</span>   <span class="blossom-pink">`---'</span>   <span class="stem">/</span> <span class="blossom-peach">`---'</span> <span class="spark" data-spark="12"> </span> 
-  <span class="spark" data-spark="13">+</span>  <span class="stem">\    \    |    /    /</span>  <span class="spark" data-spark="14">*</span>  
-    <span class="wrap">__\____</span><span class="stem">\</span><span class="wrap">___</span><span class="stem">|</span><span class="wrap">___</span><span class="stem">/</span><span class="wrap">____/__</span>    
-    <span class="wrap">\  `~.___</span>  <span class="stem">|</span>  <span class="wrap">___.~'  /</span>    
-   <span class="spark" data-spark="15"> </span> <span class="wrap">`.</span>     <span class="ribbon">.-. .-.</span>     <span class="wrap">.'</span> <span class="spark" data-spark="16"> </span>   
-       <span class="wrap">`.</span>   <span class="ribbon">\_(<span class="knot" data-knot>*</span>)_/</span>   <span class="wrap">.'</span>       
-         <span class="wrap">`.</span>  <span class="ribbon">/ | \</span>  <span class="wrap">.'</span>         
-           <span class="wrap">`.</span>  <span class="ribbon">|</span>  <span class="wrap">.'</span>           
-             <span class="wrap">`.</span><span class="ribbon">v</span><span class="wrap">.'</span>             </pre>
+            <div class="bouquet-canvas-wrap">
+              <canvas
+                id="bouquet-canvas"
+                class="bouquet-canvas"
+                aria-label="Живой 3D ASCII-букет цветов из символов"
+              ></canvas>
             </div>
 
             <div class="ascii-pulse-bar" aria-hidden="true">
@@ -171,7 +160,10 @@
             </div>
 
             <p class="bouquet-caption">
-              ˚₊· ͟͟͞͞➳❥ букетик, который сияет для тебя вечно 🌸
+              ˚₊· ͟͟͞͞➳❥ букетик, который расцветает и сияет для тебя 🌸
+            </p>
+            <p class="bouquet-hint" aria-hidden="true">
+              ✦ поводи по букету или коснись его — он объёмный в 3D ✦
             </p>
           </section>
 
@@ -234,6 +226,6 @@
   <!-- Единый быстрый спрайтовый Canvas для символов, лепестков и салюта-сердца -->
   <canvas id="fx-canvas" class="canvas-fx" aria-hidden="true"></canvas>
 
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
